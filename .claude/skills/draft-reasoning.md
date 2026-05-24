@@ -14,7 +14,7 @@ Heuristics and rules for optimal draft reasoning in Heroes of the Storm.
 ### Against Poke Compositions
 - If enemy picks 2+ poke heroes (Chromie, Li-Ming, Hanzo, Fenix):
   - Recommend dive to close distance: Tyrael, Anub'arak
-  - Recommend sustain healers: Malfurion, Lucio
+  - Recommend sustain healers: Malfurion, Lúcio
   - Avoid low-mobility tanks: Stitches, Johanna
 
 ### Against AA-Heavy Compositions
@@ -56,7 +56,7 @@ Heuristics and rules for optimal draft reasoning in Heroes of the Storm.
 ### Long Objective Maps (Cursed Hollow, Battlefield of Eternity)
 - Prioritize sustain damage and healing
 - Global heroes provide rotational advantage
-- Marathon healers (Malfurion, Lucio) outperform burst healers
+- Marathon healers (Malfurion, Lúcio) outperform burst healers
 
 ### Two-Lane Maps (Braxis Holdout, Hanamura)
 - Must have a strong solo laner

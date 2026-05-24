@@ -42,7 +42,7 @@ function generateDefaultMeta(): HeroMeta[] {
     'Thrall': { tier: 'B', winRate: 50.7, strongMaps: ['braxis-holdout', 'dragon-shire', 'battlefield-of-eternity'], notes: 'Sundering splits teams. Good solo laner.' },
     'Ragnaros': { tier: 'B', winRate: 51.3, strongMaps: ['braxis-holdout', 'tomb-of-the-spider-queen', 'alterac-pass'], notes: 'Molten Core defends keeps. Lava Wave for macro.' },
     'Ana': { tier: 'B', winRate: 50.9, strongMaps: ['sky-temple', 'hanamura-temple', 'garden-of-terror'], notes: 'Nano Boost enables carries. Sleep Dart for picks.' },
-    'Lucio': { tier: 'B', winRate: 50.6, strongMaps: ['volskaya-foundry', 'tomb-of-the-spider-queen', 'hanamura-temple'], notes: 'Speed Boost for rotations. Sound Barrier saves teamfights.' },
+    'Lúcio': { tier: 'B', winRate: 50.6, strongMaps: ['volskaya-foundry', 'tomb-of-the-spider-queen', 'hanamura-temple'], notes: 'Speed Boost for rotations. Sound Barrier saves teamfights.' },
     'Uther': { tier: 'B', winRate: 51.1, strongMaps: ['infernal-shrines', 'volskaya-foundry', 'hanamura-temple'], notes: 'Divine Shield saves carries. Stun is valuable CC.' },
     'Tyrande': { tier: 'B', winRate: 50.4, strongMaps: ['cursed-hollow', 'sky-temple', 'garden-of-terror'], notes: 'Shadowstalk for engage/disengage. Hunter Mark focus fire.' },
     'Hanzo': { tier: 'B', winRate: 50.2, strongMaps: ['sky-temple', 'hanamura-temple', 'warhead-junction'], notes: 'Long range poke. Dragonstrike zones objectives.' },

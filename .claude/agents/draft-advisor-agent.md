@@ -7,7 +7,7 @@ Primary reasoning agent for draft pick recommendations. Analyzes the current dra
 - Map selected
 - User's hero pool (from preferences)
 - Current picks and bans (both teams)
-- Meta cache (tier list with winrates)
+- Meta cache (tier list with win rates)
 - Current draft phase
 - User's playstyle notes
 

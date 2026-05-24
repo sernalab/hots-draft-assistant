@@ -50,7 +50,7 @@ const heroesRaw: HeroData[] = [
   { name: 'Kharazim', role: 'Healer' },
   { name: 'Li Li', role: 'Healer' },
   { name: 'Lt. Morales', role: 'Healer' },
-  { name: 'Lucio', role: 'Healer' },
+  { name: 'Lúcio', role: 'Healer' },
   { name: 'Malfurion', role: 'Healer' },
   { name: 'Rehgar', role: 'Healer' },
   { name: 'Stukov', role: 'Healer' },
@@ -109,8 +109,14 @@ const heroesRaw: HeroData[] = [
   { name: 'Zul\'jin', role: 'Ranged Assassin' },
 ];
 
+const HERO_ID_OVERRIDES: Record<string, string> = {
+  'The Lost Vikings': 'lostvikings',
+  'Lúcio': 'lucio',
+};
+
 function heroId(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (HERO_ID_OVERRIDES[name]) return HERO_ID_OVERRIDES[name];
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 export const HEROES: Hero[] = heroesRaw.map(h => ({

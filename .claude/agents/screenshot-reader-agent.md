@@ -33,8 +33,8 @@ Vision agent that analyzes screenshots of the Heroes of the Storm draft screen a
 - Use empty arrays for slots with no heroes
 - Use null for map if not visible
 - Phase detection: count filled slots to determine phase
-  - 0-2 bans filled → ban-1
-  - 3+ bans, 0-3 picks → pick-1
-  - 4+ bans → ban-2
-  - 4+ picks → pick-2
-  - All slots filled → complete
+  - 0-3 bans filled, 0 picks → ban-1
+  - 4 bans, 0-3 picks → pick-1
+  - 4 bans, 4+ picks, fewer than 6 bans → ban-2
+  - 6 bans, 4+ picks, fewer than 10 picks → pick-2
+  - All 10 picks filled → complete

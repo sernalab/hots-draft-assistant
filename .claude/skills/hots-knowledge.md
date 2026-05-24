@@ -40,7 +40,7 @@
 ### Hanamura Temple
 - **Strengths**: poke, sustain, AoE
 - **Strategy**: Payload escort map. Poke, sustain, and AoE compositions dominate the narrow lanes.
-- **Key heroes**: Hanzo, Fenix, Lucio, Johanna
+- **Key heroes**: Hanzo, Fenix, Lúcio, Johanna
 
 ### Infernal Shrines
 - **Strengths**: burst AoE, teamfight, waveclear
@@ -56,6 +56,11 @@
 - **Strengths**: waveclear, split push, sustain
 - **Strategy**: Small map focused on gem collection. Waveclear and split push specialists thrive.
 - **Key heroes**: Zagara, Xul, Nazeebo, Sylvanas
+
+### Towers of Doom
+- **Strengths**: sustain, control, teamfight
+- **Strategy**: Core cannot be attacked directly. Altar control deals core damage. Sustain and teamfight compositions excel. Sappers from forts add pressure.
+- **Key heroes**: E.T.C., Johanna, Malfurion, Sylvanas
 
 ### Volskaya Foundry
 - **Strengths**: CC, teamfight, AoE
@@ -81,9 +86,9 @@
 ## Draft Mechanics
 
 ### Standard Draft Order
-1. Ban Phase 1 (3 bans each)
+1. Ban Phase 1 (2 bans each, 4 total)
 2. Pick Phase 1 (picks alternate)
-3. Ban Phase 2 (2 bans each)
+3. Ban Phase 2 (1 ban each, 2 total)
 4. Pick Phase 2 (remaining picks)
 
 ### Key Principles

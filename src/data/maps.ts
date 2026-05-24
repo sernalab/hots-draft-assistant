@@ -79,6 +79,12 @@ export const MAPS: GameMap[] = [
     description: 'Conveyors add positioning dynamics. CC-heavy teamfight compositions are ideal.',
   },
   {
+    id: 'towers-of-doom',
+    name: 'Towers of Doom',
+    strengths: ['sustain', 'control', 'teamfight'],
+    description: 'Core cannot be attacked directly. Altar control deals core damage. Sustain and teamfight compositions excel.',
+  },
+  {
     id: 'warhead-junction',
     name: 'Warhead Junction',
     strengths: ['poke', 'structures', 'globals'],
