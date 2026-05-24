@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0a0e1a;
+  --color-bg-card: #111827;
+  --color-bg-card-hover: #1a2332;
+  --color-border: #1f2937;
+  --color-border-active: #374151;
+  --color-accent: #00d4ff;
+  --color-accent-purple: #7c3aed;
+  --color-accent-purple-light: #a78bfa;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-tier-s: #ffd700;
+  --color-tier-a: #c0c0c0;
+  --color-tier-b: #cd7f32;
+  --color-tier-c: #6b7280;
+  --color-tier-d: #4b5563;
+  --color-map-strong: #22c55e;
+  --color-map-neutral: #eab308;
+  --color-map-weak: #ef4444;
+  --color-ally: #3b82f6;
+  --color-enemy: #ef4444;
+  --font-display: "Exo 2", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@utility glow-accent {
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+@utility glow-purple {
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+}
+
+@utility hero-card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@utility animate-shimmer {
+  background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-card-hover) 50%, var(--color-bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
