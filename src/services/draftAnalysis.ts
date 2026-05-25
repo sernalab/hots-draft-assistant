@@ -114,12 +114,6 @@ function getTeamHeroes(steps: DraftStep[], team: 'ally' | 'enemy'): Hero[] {
     .map(s => s.hero!);
 }
 
-function getBannedNames(steps: DraftStep[]): string[] {
-  return steps
-    .filter(s => s.action === 'ban' && s.hero)
-    .map(s => s.hero!.name);
-}
-
 function getAvailableHeroes(steps: DraftStep[]): Hero[] {
   const taken = new Set(
     steps.filter(s => s.hero).map(s => s.hero!.name)
@@ -489,7 +483,7 @@ export function suggestFullComp(
 
         // Synergy with already picked
         for (const prev of result) {
-          for (const [a, b, desc] of SYNERGIES) {
+          for (const [a, b] of SYNERGIES) {
             if ((h.name === a && prev.hero.name === b) || (h.name === b && prev.hero.name === a)) {
               score += 6;
               reasons.push(`synergy with ${prev.hero.name}`);

@@ -120,7 +120,7 @@ async function fetchApi(page: PageData, mapId: string | null, rankTier: number |
 
   if (!res.ok) throw new Error(`API returned ${res.status}`);
 
-  const json: HpApiResponse = await res.json();
+  const json = await res.json() as HpApiResponse;
 
   if (json.status && json.status !== 'success') {
     throw new Error(`API error: ${json.status}`);

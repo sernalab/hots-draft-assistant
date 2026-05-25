@@ -10,7 +10,6 @@ interface HeroBrowserProps {
   metaLoading: boolean;
   metaError: string | null;
   lastSync: string;
-  currentMap: string | null;
   currentRank: number | null;
   takenHeroes: string[];
   hasActiveSlot: boolean;
@@ -72,7 +71,6 @@ export function HeroBrowser({
   metaLoading,
   metaError,
   lastSync,
-  currentMap,
   currentRank,
   takenHeroes,
   hasActiveSlot,

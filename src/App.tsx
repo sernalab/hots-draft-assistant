@@ -22,7 +22,7 @@ export default function App() {
     currentPhaseLabel,
   } = useDraft();
 
-  const { meta, loading: metaLoading, error: metaError, lastSync, currentMap, currentRank, forceSync, syncForMap, syncForRank } = useMeta();
+  const { meta, loading: metaLoading, error: metaError, lastSync, currentRank, forceSync, syncForMap, syncForRank } = useMeta();
   const [prefs, setPrefs] = useState<UserPreferences>(getUserPreferences);
   const [showUserPool, setShowUserPool] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -116,7 +116,6 @@ export default function App() {
               metaLoading={metaLoading}
               metaError={metaError}
               lastSync={lastSync}
-              currentMap={currentMap}
               currentRank={currentRank}
               takenHeroes={takenHeroes}
               hasActiveSlot={draft.activeStepIndex !== null}
