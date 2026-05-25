@@ -5,7 +5,7 @@ import { getMetaCache, getTimeSinceSync } from '../services/storage';
 
 export function useMeta() {
   const [meta, setMeta] = useState<MetaCache | null>(getMetaCache);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState(getTimeSinceSync);
   const [currentMap, setCurrentMap] = useState<string | null>(null);
@@ -13,7 +13,6 @@ export function useMeta() {
 
   // Initial load
   useEffect(() => {
-    setLoading(true);
     syncMeta(null, null)
       .then(cache => {
         console.log('[useMeta] Loaded', cache.data.length, 'heroes');
@@ -47,12 +46,12 @@ export function useMeta() {
 
   const syncForMap = useCallback((mapId: string | null) => {
     setCurrentMap(mapId);
-    doSync(mapId, currentRank, true);
+    doSync(mapId, currentRank, false);
   }, [doSync, currentRank]);
 
   const syncForRank = useCallback((rank: number | null) => {
     setCurrentRank(rank);
-    doSync(currentMap, rank, true);
+    doSync(currentMap, rank, false);
   }, [doSync, currentMap]);
 
   return { meta, loading, error, lastSync, currentMap, currentRank, forceSync, syncForMap, syncForRank };

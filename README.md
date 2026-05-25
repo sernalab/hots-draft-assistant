@@ -1,20 +1,20 @@
 # HotS Draft Assistant
 
-Real-time AI-powered draft assistant for Heroes of the Storm (Storm League / ranked). Helps you choose optimal picks and bans based on map, team composition, and current meta.
+Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Helps you choose picks and bans based on map, team composition, and current meta — using live win-rate data scraped from HeroesProfile.
 
 ## Features
 
-- **Draft Board** — Select map, manage picks and bans for both teams
-- **AI Recommendations** — Get 3 hero suggestions with reasoning, synergy analysis, and counter information
-- **Meta Sync** — Tier list with win rates, cached for 24h
-- **Screenshot Analysis** — Upload a draft screenshot to auto-fill the draft state
-- **Hero Pool** — Save your preferred heroes and playstyle for personalized suggestions
+- **Draft Board** — Select map, walk through the 16-step Storm League draft sequence for both teams
+- **Draft Advisor** — Rule-based pick/ban suggestions with reasoning (role coverage, CC, waveclear, synergies, counters, map affinity)
+- **Hero Browser** — Filter and sort the full hero pool by win rate / pick rate / ban rate / sample size, by rank tier
+- **Meta Sync** — Pulls live stats from HeroesProfile, cached in localStorage for 2h
+- **Hero Pool** — Save your preferred heroes and playstyle in localStorage
 
 ## Tech Stack
 
-- React (Vite) + TypeScript
+- React 19 (Vite) + TypeScript
 - Tailwind CSS 4
-- Anthropic API (Claude Sonnet) via proxy
+- HeroesProfile scraping via Vite dev middleware (dev) / Netlify Function (production)
 - localStorage for persistence
 
 ## Getting Started
@@ -24,14 +24,21 @@ npm install
 npm run dev
 ```
 
-## AI Integration
+## Scripts
 
-The app expects a proxy at `/api/chat` that forwards to the Anthropic API. Configure your proxy to handle:
+- `npm run dev` — Vite dev server with `/api/meta` middleware
+- `npm run build` — TypeScript build + Vite production bundle
+- `npm run lint` — ESLint
+- `npm run preview` — Preview the production build locally
 
-```
-POST /api/chat
-Body: { model, max_tokens, system, messages }
-```
+## API
+
+The app calls `GET /api/meta?map=<map-id>&rank=<rank-tier>`.
+
+- **Dev**: served by `server/vite-plugin-api.ts` (Vite middleware)
+- **Production**: served by `netlify/functions/meta.ts` (Netlify Function)
+
+Both call into `server/heroesprofile.ts`, which scrapes HeroesProfile's CSRF-protected internal API.
 
 ## License
 

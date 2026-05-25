@@ -39,27 +39,45 @@ async function getPageData(): Promise<PageData> {
   const res = await fetch(`${HP_BASE}/Global/Hero`, {
     headers: { 'User-Agent': UA, 'Accept': 'text/html' },
   });
-  if (!res.ok) throw new Error(`HeroesProfile returned ${res.status}`);
+  if (!res.ok) throw new Error(`HeroesProfile returned ${res.status} fetching page`);
 
   const html = await res.text();
 
-  // CSRF token
   const tokenMatch = html.match(/<meta name="csrf-token" content="([^"]+)"/);
-  if (!tokenMatch) throw new Error('CSRF token not found');
+  if (!tokenMatch) throw new Error('HeroesProfile layout changed — CSRF token not found');
 
-  // Cookies
   const setCookies = res.headers.getSetCookie?.() ?? [];
   const cookies = setCookies.map(c => c.split(';')[0]).join('; ');
 
-  // Latest patch version from embedded Vue data (HTML-encoded quotes)
-  const patchMatch = html.match(/&quot;code&quot;:&quot;(\d+\.\d+\.\d+\.\d+)&quot;/);
-  if (!patchMatch) throw new Error('Could not find patch version');
+  // Patch version is embedded in Vue data as HTML-encoded JSON.
+  // Tolerate either encoded (&quot;) or raw quotes in case HeroesProfile changes encoding.
+  const patchMatch =
+    html.match(/&quot;code&quot;:&quot;(\d+\.\d+\.\d+\.\d+)&quot;/) ??
+    html.match(/"code":"(\d+\.\d+\.\d+\.\d+)"/);
+  if (!patchMatch) throw new Error('HeroesProfile layout changed — patch version not found');
 
   return {
     csrfToken: tokenMatch[1],
     cookies,
     latestPatch: patchMatch[1],
   };
+}
+
+async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        const delay = 250 * Math.pow(2, i);
+        console.warn(`[HeroesProfile] ${label} failed (attempt ${i + 1}/${attempts}), retrying in ${delay}ms:`, err instanceof Error ? err.message : err);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 interface HpApiResponse {
@@ -153,6 +171,6 @@ async function fetchApi(page: PageData, mapId: string | null, rankTier: number |
 }
 
 export async function getHeroStats(mapId: string | null, rankTier: number | null = null): Promise<HpHeroResult[]> {
-  const page = await getPageData();
-  return fetchApi(page, mapId, rankTier);
+  const page = await withRetry('page fetch', () => getPageData());
+  return withRetry('api fetch', () => fetchApi(page, mapId, rankTier));
 }

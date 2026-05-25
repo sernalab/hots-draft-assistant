@@ -1,41 +1,46 @@
 # HotS Draft Assistant
 
 ## Overview
-Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provides AI-powered pick and ban recommendations based on map, team composition, and current meta.
+Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provides rule-based pick and ban recommendations using live win-rate data from HeroesProfile, plus team-composition heuristics (role coverage, CC, waveclear, synergies, counters, map affinity).
+
+**No AI / LLM integration. All logic is deterministic.**
 
 ## Stack
-- **Framework**: React (Vite) + TypeScript
+- **Framework**: React 19 (Vite) + TypeScript
 - **Styles**: Tailwind CSS 4
-- **AI**: Anthropic API (claude-sonnet-4-20250514) via `/api/chat` proxy
+- **Data**: HeroesProfile scrape via Vite middleware (dev) and Netlify Function (prod), both exposed at `/api/meta`
 - **Persistence**: localStorage (meta cache, user preferences)
-- **Deployment**: SPA, standalone
+- **Deployment**: SPA on Netlify
 
 ## Architecture
 
-### Services
-- `services/claude.ts` — Claude API integration for draft advice and screenshot analysis
-- `services/metaSync.ts` — Meta data generation and caching (tier lists, win rates)
-- `services/storage.ts` — localStorage wrapper for cache, preferences
+### Services (`src/services/`)
+- `metaSync.ts` — Fetches `/api/meta`, normalises into `HeroMeta[]`, caches in localStorage (2h TTL keyed by map+rank)
+- `draftAnalysis.ts` — Pure scoring functions: composition checks, pick/ban suggestions, full-comp builder. Drives `DraftAdvisor`.
+- `storage.ts` — localStorage wrapper for `MetaCache` and `UserPreferences`
 
-### Key Components
-- `DraftBoard` — Map selector + pick/ban slots (3 enemy bans, 3 ally bans, 5 picks each)
-- `AIPanel` — Claude-powered recommendations with reasoning
-- `MetaPanel` — Tier list browser with win rates
-- `HeroSearch` — Modal with instant filter by name/role
-- `ScreenshotAnalyzer` — Vision-based draft extraction from screenshots
-- `UserPoolModal` — Hero pool and playstyle preferences
+### Hooks (`src/hooks/`)
+- `useDraft` — Owns the 16-step Storm League draft state machine
+- `useMeta` — Loads meta cache on mount, exposes `forceSync` / `syncForMap` / `syncForRank`
 
-### .claude/ Structure
-- `agents/` — meta-sync, draft-advisor, screenshot-reader agent prompts
-- `skills/` — hots-knowledge, tier-list-parser, draft-reasoning
+### Components (`src/components/`)
+- `DraftBoard` — Map selector, first-pick toggle, 16 ordered pick/ban slots
+- `DraftAdvisor` — Composition checks, top-5 pick/ban suggestions, full-comp builder
+- `HeroBrowser` — Sortable/filterable hero table with meta stats + rank-tier selector
+- `HeroSearch` — Modal with instant name/role filter
+- `UserPoolModal` — Hero pool and playstyle preference editor
+- `HeroIcon`, `TierBadge` — Presentational
 
-## API Integration
-- Proxy endpoint: `POST /api/chat`
-- Model: `claude-sonnet-4-20250514`
-- Max tokens: 1000
-- No API key in code — handled by proxy
+### Server (`server/`, `netlify/`)
+- `server/heroesprofile.ts` — Scrapes HeroesProfile's CSRF-protected internal API (`/api/v1/global/hero`). Includes retries with exponential backoff.
+- `server/vite-plugin-api.ts` — Dev-only middleware exposing `/api/meta`
+- `netlify/functions/meta.ts` — Production endpoint, same logic
 
 ## Design
-- Dark gaming theme (#0a0e1a background, #00d4ff accent, #7c3aed AI purple)
+- Dark gaming theme (`#0a0e1a` bg, `#00d4ff` cyan accent, `#7c3aed` purple for the advisor panel)
 - Font: Exo 2 (display) + Inter (body)
-- Mobile-friendly (tablet-first for second screen usage)
+- Tablet-first (designed as a second-screen companion)
+
+## Data Sources
+- **HeroesProfile** (`heroesprofile.com`) — primary source for win/pick/ban rates by map and rank tier
+- Hero list, roles and map metadata are bundled statically in `src/data/`
