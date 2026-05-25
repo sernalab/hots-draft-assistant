@@ -2,17 +2,8 @@ export type HeroRole = 'Tank' | 'Bruiser' | 'Support' | 'Healer' | 'Melee Assass
 
 export type Tier = 'S' | 'A' | 'B' | 'C' | 'D';
 
-export type MapFit = 'strong' | 'neutral' | 'weak';
-
-export type DraftPhase =
-  | 'ban-1'
-  | 'pick-1'
-  | 'ban-2'
-  | 'pick-2'
-  | 'complete';
-
-export type SlotType = 'ban' | 'pick';
 export type Team = 'ally' | 'enemy';
+export type ActionType = 'ban' | 'pick';
 
 export interface Hero {
   id: string;
@@ -25,59 +16,49 @@ export interface HeroMeta {
   hero: string;
   tier: Tier;
   winRate: number;
+  pickRate: number;
+  banRate: number;
+  gamesPlayed: number;
   role: HeroRole;
-  strongMaps: string[];
-  notes: string;
+  influence: number;
 }
 
 export interface MetaCache {
   timestamp: number;
   data: HeroMeta[];
+  map: string | null;
+  rank: number | null;
 }
 
-export interface DraftSlot {
-  team: Team;
-  type: SlotType;
+export type SortField = 'winRate' | 'pickRate' | 'banRate' | 'gamesPlayed';
+
+export const RANK_TIERS = [
+  { code: null, name: 'All Ranks' },
+  { code: 6, name: 'Master' },
+  { code: 5, name: 'Diamond' },
+  { code: 4, name: 'Platinum' },
+  { code: 3, name: 'Gold' },
+  { code: 2, name: 'Silver' },
+  { code: 1, name: 'Bronze' },
+] as const;
+
+// Each step in the Storm League draft sequence
+export interface DraftStep {
   index: number;
+  team: Team;
+  action: ActionType;
   hero: Hero | null;
 }
 
 export interface DraftState {
   map: string | null;
-  phase: DraftPhase;
-  enemyBans: (Hero | null)[];
-  allyBans: (Hero | null)[];
-  enemyPicks: (Hero | null)[];
-  allyPicks: (Hero | null)[];
-  activeSlot: { team: Team; type: SlotType; index: number } | null;
-}
-
-export interface Recommendation {
-  hero: string;
-  tier: Tier;
-  reasoning: string;
-  synergyWith: string[];
-  counters: string[];
-  mapFit: MapFit;
-}
-
-export interface DraftAdvice {
-  recommendations: Recommendation[];
-  teamCompAnalysis: string;
-  warning: string | null;
+  isFirstPick: boolean;
+  steps: DraftStep[];
+  activeStepIndex: number | null; // which step is being filled
 }
 
 export interface UserPreferences {
   heroPool: string[];
   mainRole: HeroRole | null;
   playstyleNotes: string;
-}
-
-export interface ScreenshotResult {
-  map: string | null;
-  enemyBans: string[];
-  allyBans: string[];
-  enemyPicks: string[];
-  allyPicks: string[];
-  phase: DraftPhase;
 }

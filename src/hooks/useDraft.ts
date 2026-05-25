@@ -1,103 +1,138 @@
-import { useCallback, useState } from 'react';
-import type { DraftPhase, DraftState, Hero, SlotType, Team } from '../types';
+import { useCallback, useMemo, useState } from 'react';
+import type { ActionType, DraftState, DraftStep, Hero, Team } from '../types';
 
-const INITIAL_STATE: DraftState = {
-  map: null,
-  phase: 'ban-1',
-  enemyBans: [null, null, null],
-  allyBans: [null, null, null],
-  enemyPicks: [null, null, null, null, null],
-  allyPicks: [null, null, null, null, null],
-  activeSlot: null,
-};
+/**
+ * Storm League draft order (16 steps):
+ * "A" = first pick team, "B" = second pick team
+ *
+ * Ban Phase 1:  A ban, B ban, A ban, B ban
+ * Pick Phase 1: A pick, B pick, B pick, A pick
+ * Ban Phase 2:  A ban, B ban
+ * Pick Phase 2: B pick, A pick, A pick, B pick, B pick, A pick
+ */
+const DRAFT_SEQUENCE: { team: 'A' | 'B'; action: ActionType }[] = [
+  { team: 'A', action: 'ban' },
+  { team: 'B', action: 'ban' },
+  { team: 'A', action: 'ban' },
+  { team: 'B', action: 'ban' },
+  { team: 'A', action: 'pick' },
+  { team: 'B', action: 'pick' },
+  { team: 'B', action: 'pick' },
+  { team: 'A', action: 'pick' },
+  { team: 'A', action: 'ban' },
+  { team: 'B', action: 'ban' },
+  { team: 'B', action: 'pick' },
+  { team: 'A', action: 'pick' },
+  { team: 'A', action: 'pick' },
+  { team: 'B', action: 'pick' },
+  { team: 'B', action: 'pick' },
+  { team: 'A', action: 'pick' },
+];
+
+function buildSteps(isFirstPick: boolean): DraftStep[] {
+  return DRAFT_SEQUENCE.map((s, i) => ({
+    index: i,
+    team: (s.team === 'A') === isFirstPick ? 'ally' as Team : 'enemy' as Team,
+    action: s.action,
+    hero: null,
+  }));
+}
+
+function findNextEmpty(steps: DraftStep[], from = 0): number | null {
+  for (let i = from; i < steps.length; i++) {
+    if (!steps[i].hero) return i;
+  }
+  return null;
+}
+
+function createInitialState(): DraftState {
+  return {
+    map: null,
+    isFirstPick: true,
+    steps: buildSteps(true),
+    activeStepIndex: 0, // Start at first step
+  };
+}
 
 export function useDraft() {
-  const [draft, setDraft] = useState<DraftState>(INITIAL_STATE);
+  const [draft, setDraft] = useState<DraftState>(createInitialState);
 
   const setMap = useCallback((mapId: string) => {
-    setDraft(prev => ({ ...prev, map: mapId }));
+    setDraft(prev => ({ ...prev, map: mapId || null }));
   }, []);
 
-  const setActiveSlot = useCallback((team: Team, type: SlotType, index: number) => {
-    setDraft(prev => ({ ...prev, activeSlot: { team, type, index } }));
-  }, []);
-
-  const clearActiveSlot = useCallback(() => {
-    setDraft(prev => ({ ...prev, activeSlot: null }));
-  }, []);
-
-  const setHeroInSlot = useCallback((hero: Hero) => {
-    setDraft(prev => {
-      if (!prev.activeSlot) return prev;
-      const { team, type, index } = prev.activeSlot;
-      const key = `${team}${type === 'ban' ? 'Bans' : 'Picks'}` as keyof DraftState;
-      const slots = [...(prev[key] as (Hero | null)[])];
-      slots[index] = hero;
-      return { ...prev, [key]: slots, activeSlot: null };
-    });
-  }, []);
-
-  const removeHeroFromSlot = useCallback((team: Team, type: SlotType, index: number) => {
-    setDraft(prev => {
-      const key = `${team}${type === 'ban' ? 'Bans' : 'Picks'}` as keyof DraftState;
-      const slots = [...(prev[key] as (Hero | null)[])];
-      slots[index] = null;
-      return { ...prev, [key]: slots };
-    });
-  }, []);
-
-  const setPhase = useCallback((phase: DraftPhase) => {
-    setDraft(prev => ({ ...prev, phase }));
-  }, []);
-
-  const resetDraft = useCallback(() => {
-    setDraft(INITIAL_STATE);
-  }, []);
-
-  const applyScreenshot = useCallback((data: {
-    map: string | null;
-    enemyBans: Hero[];
-    allyBans: Hero[];
-    enemyPicks: Hero[];
-    allyPicks: Hero[];
-    phase: DraftPhase;
-  }) => {
+  const setFirstPick = useCallback((isFirst: boolean) => {
+    const steps = buildSteps(isFirst);
     setDraft(prev => ({
       ...prev,
-      map: data.map ?? prev.map,
-      phase: data.phase,
-      enemyBans: padSlots(data.enemyBans, 3),
-      allyBans: padSlots(data.allyBans, 3),
-      enemyPicks: padSlots(data.enemyPicks, 5),
-      allyPicks: padSlots(data.allyPicks, 5),
-      activeSlot: null,
+      isFirstPick: isFirst,
+      steps,
+      activeStepIndex: findNextEmpty(steps),
     }));
   }, []);
 
-  const getAllPickedHeroes = useCallback((): string[] => {
-    const all = [
-      ...draft.enemyBans, ...draft.allyBans,
-      ...draft.enemyPicks, ...draft.allyPicks,
-    ];
-    return all.filter(Boolean).map(h => h!.name);
-  }, [draft]);
+  // Allow clicking a specific step to override it (e.g., fix a mistake)
+  const setActiveStep = useCallback((index: number | null) => {
+    setDraft(prev => ({ ...prev, activeStepIndex: index }));
+  }, []);
+
+  // Assign hero to active step and auto-advance to next empty
+  const setHeroInStep = useCallback((hero: Hero) => {
+    setDraft(prev => {
+      if (prev.activeStepIndex === null) return prev;
+      const steps = [...prev.steps];
+      steps[prev.activeStepIndex] = { ...steps[prev.activeStepIndex], hero };
+      const nextActive = findNextEmpty(steps, prev.activeStepIndex + 1)
+        ?? findNextEmpty(steps, 0);
+      return { ...prev, steps, activeStepIndex: nextActive };
+    });
+  }, []);
+
+  // Remove hero and set that step as active
+  const removeHeroFromStep = useCallback((index: number) => {
+    setDraft(prev => {
+      const steps = [...prev.steps];
+      steps[index] = { ...steps[index], hero: null };
+      return { ...prev, steps, activeStepIndex: index };
+    });
+  }, []);
+
+  const resetDraft = useCallback(() => {
+    setDraft(prev => {
+      const steps = buildSteps(prev.isFirstPick);
+      return {
+        ...createInitialState(),
+        map: prev.map,
+        isFirstPick: prev.isFirstPick,
+        steps,
+        activeStepIndex: 0,
+      };
+    });
+  }, []);
+
+  const takenHeroes = useMemo(() =>
+    draft.steps.filter(s => s.hero).map(s => s.hero!.name),
+    [draft.steps]
+  );
+
+  const currentPhaseLabel = useMemo(() => {
+    const filled = draft.steps.filter(s => s.hero).length;
+    if (filled < 4) return 'Ban Phase 1';
+    if (filled < 8) return 'Pick Phase 1';
+    if (filled < 10) return 'Ban Phase 2';
+    if (filled < 16) return 'Pick Phase 2';
+    return 'Draft Complete';
+  }, [draft.steps]);
 
   return {
     draft,
     setMap,
-    setActiveSlot,
-    clearActiveSlot,
-    setHeroInSlot,
-    removeHeroFromSlot,
-    setPhase,
+    setFirstPick,
+    setActiveStep,
+    setHeroInStep,
+    removeHeroFromStep,
     resetDraft,
-    applyScreenshot,
-    getAllPickedHeroes,
+    takenHeroes,
+    currentPhaseLabel,
   };
-}
-
-function padSlots(heroes: Hero[], size: number): (Hero | null)[] {
-  const result: (Hero | null)[] = [...heroes];
-  while (result.length < size) result.push(null);
-  return result.slice(0, size);
 }

@@ -6,13 +6,17 @@ const KEYS = {
   DRAFT_STATE: 'hots_draft_state',
 } as const;
 
-const META_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
 export function getMetaCache(): MetaCache | null {
   try {
     const raw = localStorage.getItem(KEYS.META_CACHE);
     if (!raw) return null;
-    return JSON.parse(raw) as MetaCache;
+    const parsed = JSON.parse(raw) as MetaCache;
+    // Validate cache has new format (pickRate field exists on first entry)
+    if (parsed.data?.length > 0 && parsed.data[0].pickRate === undefined) {
+      localStorage.removeItem(KEYS.META_CACHE);
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -20,12 +24,6 @@ export function getMetaCache(): MetaCache | null {
 
 export function setMetaCache(cache: MetaCache): void {
   localStorage.setItem(KEYS.META_CACHE, JSON.stringify(cache));
-}
-
-export function isMetaCacheExpired(): boolean {
-  const cache = getMetaCache();
-  if (!cache) return true;
-  return Date.now() - cache.timestamp > META_TTL;
 }
 
 export function getUserPreferences(): UserPreferences {

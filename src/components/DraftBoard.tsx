@@ -1,67 +1,39 @@
-import type { DraftState, Hero, SlotType, Team } from '../types';
+import type { DraftState } from '../types';
 import { MAPS } from '../data/maps';
-import { DraftSlot } from './DraftSlot';
+import { HeroIcon } from './HeroIcon';
 
 interface DraftBoardProps {
   draft: DraftState;
+  phaseLabel: string;
   onMapChange: (mapId: string) => void;
-  onSlotClick: (team: Team, type: SlotType, index: number) => void;
-  onRemoveHero: (team: Team, type: SlotType, index: number) => void;
+  onFirstPickChange: (isFirst: boolean) => void;
+  onStepClick: (index: number) => void;
+  onRemoveHero: (index: number) => void;
   onReset: () => void;
 }
 
-function SlotRow({
-  label,
-  team,
-  type,
-  slots,
-  activeSlot,
-  onSlotClick,
-  onRemoveHero,
-}: {
-  label: string;
-  team: Team;
-  type: SlotType;
-  slots: (Hero | null)[];
-  activeSlot: DraftState['activeSlot'];
-  onSlotClick: (team: Team, type: SlotType, index: number) => void;
-  onRemoveHero: (team: Team, type: SlotType, index: number) => void;
-}) {
-  return (
-    <div>
-      <span className={`text-xs font-semibold uppercase tracking-wider ${
-        team === 'enemy' ? 'text-enemy/70' : 'text-ally/70'
-      }`}>
-        {label}
-      </span>
-      <div className="flex gap-2 mt-1">
-        {slots.map((hero, i) => (
-          <DraftSlot
-            key={`${team}-${type}-${i}`}
-            hero={hero}
-            team={team}
-            type={type}
-            index={i}
-            isActive={
-              activeSlot?.team === team &&
-              activeSlot?.type === type &&
-              activeSlot?.index === i
-            }
-            onClick={() => onSlotClick(team, type, i)}
-            onRemove={() => onRemoveHero(team, type, i)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+const PHASE_LABELS = [
+  { start: 0, end: 3, label: 'Ban Phase 1' },
+  { start: 4, end: 7, label: 'Pick Phase 1' },
+  { start: 8, end: 9, label: 'Ban Phase 2' },
+  { start: 10, end: 15, label: 'Pick Phase 2' },
+];
 
-export function DraftBoard({ draft, onMapChange, onSlotClick, onRemoveHero, onReset }: DraftBoardProps) {
+export function DraftBoard({
+  draft,
+  phaseLabel,
+  onMapChange,
+  onFirstPickChange,
+  onStepClick,
+  onRemoveHero,
+  onReset,
+}: DraftBoardProps) {
   return (
     <div className="bg-bg-card border border-border rounded-xl p-4 space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-accent uppercase tracking-wider font-[family-name:var(--font-display)]">
-          Draft Board
+          Draft
         </h2>
         <button
           onClick={onReset}
@@ -73,7 +45,7 @@ export function DraftBoard({ draft, onMapChange, onSlotClick, onRemoveHero, onRe
 
       {/* Map selector */}
       <div>
-        <label className="text-xs text-text-secondary block mb-1">Map</label>
+        <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Map</label>
         <select
           value={draft.map ?? ''}
           onChange={e => onMapChange(e.target.value)}
@@ -86,56 +58,109 @@ export function DraftBoard({ draft, onMapChange, onSlotClick, onRemoveHero, onRe
         </select>
       </div>
 
+      {/* First/Second pick toggle */}
+      <div>
+        <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Your team</label>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onFirstPickChange(true)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              draft.isFirstPick
+                ? 'bg-ally/20 text-ally border border-ally/40'
+                : 'bg-bg-primary text-text-muted border border-transparent'
+            }`}
+          >
+            1st Pick
+          </button>
+          <button
+            onClick={() => onFirstPickChange(false)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              !draft.isFirstPick
+                ? 'bg-ally/20 text-ally border border-ally/40'
+                : 'bg-bg-primary text-text-muted border border-transparent'
+            }`}
+          >
+            2nd Pick
+          </button>
+        </div>
+      </div>
+
       {/* Phase indicator */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted">Phase:</span>
-        <span className="text-xs font-semibold text-accent-purple-light">{draft.phase}</span>
-      </div>
+      <div className="text-xs text-accent-purple-light font-semibold">{phaseLabel}</div>
 
-      {/* Enemy side */}
-      <div className="space-y-3">
-        <SlotRow
-          label="Enemy Bans"
-          team="enemy"
-          type="ban"
-          slots={draft.enemyBans}
-          activeSlot={draft.activeSlot}
-          onSlotClick={onSlotClick}
-          onRemoveHero={onRemoveHero}
-        />
-        <SlotRow
-          label="Enemy Picks"
-          team="enemy"
-          type="pick"
-          slots={draft.enemyPicks}
-          activeSlot={draft.activeSlot}
-          onSlotClick={onSlotClick}
-          onRemoveHero={onRemoveHero}
-        />
-      </div>
+      {/* Draft sequence */}
+      <div className="space-y-0.5">
+        {PHASE_LABELS.map(phase => (
+          <div key={phase.label}>
+            <div className="text-[10px] text-text-muted uppercase tracking-wider mt-2 mb-1">
+              {phase.label}
+            </div>
+            {draft.steps.slice(phase.start, phase.end + 1).map(step => {
+              const isActive = draft.activeStepIndex === step.index;
+              const isAlly = step.team === 'ally';
+              const isBan = step.action === 'ban';
 
-      <div className="border-t border-border" />
+              return (
+                <div
+                  key={step.index}
+                  className="group relative"
+                >
+                  <button
+                    onClick={() => onStepClick(step.index)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all ${
+                      isActive
+                        ? 'bg-accent/10 border border-accent/50'
+                        : step.hero
+                          ? 'bg-bg-primary/50 border border-transparent hover:border-border'
+                          : 'bg-bg-primary/30 border border-transparent hover:border-border'
+                    }`}
+                  >
+                    {/* Step number */}
+                    <span className="text-[10px] text-text-muted w-4 text-right shrink-0">
+                      {step.index + 1}
+                    </span>
 
-      {/* Ally side */}
-      <div className="space-y-3">
-        <SlotRow
-          label="Your Bans"
-          team="ally"
-          type="ban"
-          slots={draft.allyBans}
-          activeSlot={draft.activeSlot}
-          onSlotClick={onSlotClick}
-          onRemoveHero={onRemoveHero}
-        />
-        <SlotRow
-          label="Your Picks"
-          team="ally"
-          type="pick"
-          slots={draft.allyPicks}
-          activeSlot={draft.activeSlot}
-          onSlotClick={onSlotClick}
-          onRemoveHero={onRemoveHero}
-        />
+                    {/* Team indicator */}
+                    <span className={`w-1.5 h-6 rounded-full shrink-0 ${
+                      isAlly ? 'bg-ally/60' : 'bg-enemy/60'
+                    }`} />
+
+                    {/* Action label */}
+                    <span className={`text-[10px] uppercase font-semibold w-7 shrink-0 ${
+                      isBan ? 'text-red-400/70' : isAlly ? 'text-ally/70' : 'text-enemy/70'
+                    }`}>
+                      {isBan ? 'BAN' : 'PICK'}
+                    </span>
+
+                    {/* Hero or empty slot */}
+                    {step.hero ? (
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <HeroIcon hero={step.hero} size="sm" className="shrink-0" />
+                        <span className={`text-xs truncate ${isBan ? 'text-text-muted line-through' : 'text-text-primary'}`}>
+                          {step.hero.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-text-muted/40 flex-1">
+                        {isAlly ? 'Your' : 'Enemy'} {isBan ? 'ban' : 'pick'}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Remove button */}
+                  {step.hero && (
+                    <button
+                      onClick={() => onRemoveHero(step.index)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-red-600/80 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
