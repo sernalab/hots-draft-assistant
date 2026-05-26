@@ -520,7 +520,7 @@ export function suggestFullComp(
 
         // Counter bonus vs enemy picks
         const enemyNames = new Set(enemyPicks.map(e => e.name));
-        for (const [counter, target, desc] of COUNTERS) {
+        for (const [counter, target] of COUNTERS) {
           if (h.name === counter && enemyNames.has(target)) {
             score += 8;
             reasons.push(`counters ${target}`);

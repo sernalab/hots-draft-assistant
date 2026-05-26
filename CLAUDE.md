@@ -32,9 +32,13 @@ Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provi
 - `HeroIcon`, `TierBadge` — Presentational
 
 ### Server (`server/`, `netlify/`)
-- `server/heroesprofile.ts` — Scrapes HeroesProfile's CSRF-protected internal API (`/api/v1/global/hero`). Includes retries with exponential backoff.
-- `server/vite-plugin-api.ts` — Dev-only middleware exposing `/api/meta`
-- `netlify/functions/meta.ts` — Production endpoint, same logic
+- `server/heroesprofile.ts` — Returns `HpHeroResult[]` (`{name, winRate, pickRate, banRate, gamesPlayed}`) from the HeroesProfile **official API** (`api.heroesprofile.com/api/Heroes/Stats`, needs `HEROESPROFILE_API_TOKEN`, honors rank) when a token is set, else from the local snapshot `src/data/hpStats.json`. The old `www.heroesprofile.com` scrape is dead (Cloudflare challenge).
+- `server/heroesprofileSnapshot.ts` — Loads the bundled `src/data/hpStats.json` snapshot.
+- `server/vite-plugin-api.ts` — Dev-only middleware exposing `/api/meta`; also copies `HEROESPROFILE_API_TOKEN` from `.env` into `process.env`.
+- `netlify/functions/meta.ts` — Production endpoint, same logic.
+
+### Scripts (`scripts/`)
+- `scrape-heroesprofile.mjs` (`npm run scrape:hp`) — Drives a real Chromium (Playwright) **locally** to clear `www.heroesprofile.com`'s Cloudflare challenge, calls its internal stats endpoint, and writes `src/data/hpStats.json`. Then commit the JSON and redeploy. Headless by default; `HEADED=1` to show the browser. Free alternative to the paid token (circumvents their Patreon/Cloudflare — fragile + against ToS).
 
 ## Design
 - Dark gaming theme (`#0a0e1a` bg, `#00d4ff` cyan accent, `#7c3aed` purple for the advisor panel)
@@ -42,5 +46,15 @@ Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provi
 - Tablet-first (designed as a second-screen companion)
 
 ## Data Sources
-- **HeroesProfile** (`heroesprofile.com`) — primary source for win/pick/ban rates by map and rank tier
-- Hero list, roles and map metadata are bundled statically in `src/data/`
+- **HeroesProfile official API** (`api.heroesprofile.com`) — Storm League win/pick/ban rates. Requires `HEROESPROFILE_API_TOKEN` (Patreon, ~5€/mo); honors rank tier. `www.heroesprofile.com` is behind a Cloudflare challenge, so a plain fetch can't scrape it.
+- **HeroesProfile local snapshot** (`src/data/hpStats.json`) — free alternative, produced by `npm run scrape:hp` (Playwright clears Cloudflare locally). Global Storm League, manual refresh.
+- Hero list, roles and map metadata are bundled statically in `src/data/`.
+
+## Refreshing data ("actualiza datos")
+
+When the user says **"actualiza datos"** / "refresh stats" (or equivalent), run the refresh (also `/actualiza-datos`):
+1. `npm run scrape:hp` (retry with `HEADED=1` if Cloudflare blocks the headless run).
+2. Report hero count + sample win rates from `src/data/hpStats.json`.
+3. Commit `src/data/hpStats.json` and push to `origin` → Netlify redeploys.
+
+Only works in a **local** Claude Code session (the scrape needs a real browser + residential IP). It cannot run in a cloud routine — Cloudflare blocks datacenter IPs. Don't push if the scrape produced 0 heroes.
