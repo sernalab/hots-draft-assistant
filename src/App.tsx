@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import { DraftBoard } from './components/DraftBoard';
 import { DraftAdvisor } from './components/DraftAdvisor';
-import { HeroBrowser } from './components/HeroBrowser';
-import { HeroSearch } from './components/HeroSearch';
+import { HeroPicker } from './components/HeroPicker';
 import { UserPoolModal } from './components/UserPoolModal';
 import { useDraft } from './hooks/useDraft';
 import { useMeta } from './hooks/useMeta';
@@ -25,7 +24,6 @@ export default function App() {
   const { meta, loading: metaLoading, error: metaError, lastSync, currentRank, forceSync, syncForMap, syncForRank } = useMeta();
   const [prefs, setPrefs] = useState<UserPreferences>(getUserPreferences);
   const [showUserPool, setShowUserPool] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
 
   const handleMapChange = useCallback((mapId: string) => {
     setMap(mapId);
@@ -37,11 +35,6 @@ export default function App() {
   }, [setActiveStep]);
 
   const handleHeroSelect = useCallback((hero: Hero) => {
-    setHeroInStep(hero);
-    setShowSearch(false);
-  }, [setHeroInStep]);
-
-  const handleHeroBrowserClick = useCallback((hero: Hero) => {
     if (draft.activeStepIndex !== null) {
       setHeroInStep(hero);
     } else {
@@ -58,22 +51,31 @@ export default function App() {
     setUserPreferences(newPrefs);
   }, []);
 
+  // Active slot info for the hero picker
+  const activeSlotInfo = draft.activeStepIndex !== null
+    ? {
+        action: draft.steps[draft.activeStepIndex].action,
+        team: draft.steps[draft.activeStepIndex].team,
+      }
+    : null;
+
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="min-h-screen bg-bg-primary bg-gradient-to-b from-[#111827] via-bg-primary to-bg-primary">
       {/* Header */}
-      <header className="border-b border-border bg-bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="glass-subtle sticky top-0 z-40">
+        <div className="h-px bg-gradient-to-r from-accent via-accent-purple to-accent opacity-60" />
+        <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-accent-purple/20 border border-white/10 flex items-center justify-center">
               <span className="text-accent font-bold text-sm font-[family-name:var(--font-display)]">H</span>
             </div>
-            <h1 className="text-lg font-bold text-text-primary font-[family-name:var(--font-display)]">
-              HotS Draft <span className="text-accent">Assistant</span>
+            <h1 className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">
+              HotS Draft <span className="bg-gradient-to-r from-accent to-accent-purple-light bg-clip-text text-transparent">Assistant</span>
             </h1>
           </div>
           <button
             onClick={() => setShowUserPool(true)}
-            className="w-8 h-8 rounded-lg bg-bg-primary border border-border hover:border-accent/40 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 hover:border-accent/30 hover:bg-white/8 flex items-center justify-center text-text-secondary hover:text-text-primary transition-all"
             title="Settings"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -83,57 +85,40 @@ export default function App() {
         </div>
       </header>
 
-      {/* 3-column layout: Draft | Advisor | Heroes */}
-      <main className="max-w-[1600px] mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Draft Board */}
-          <div className="lg:col-span-3">
-            <DraftBoard
-              draft={draft}
-              phaseLabel={currentPhaseLabel}
-              onMapChange={handleMapChange}
-              onFirstPickChange={setFirstPick}
-              onStepClick={handleStepClick}
-              onRemoveHero={removeHeroFromStep}
-              onReset={resetDraft}
-            />
-          </div>
-
-          {/* Draft Advisor */}
-          <div className="lg:col-span-3">
-            <DraftAdvisor
-              steps={draft.steps}
-              meta={meta?.data ?? []}
-              mapId={draft.map}
-              onHeroClick={handleHeroBrowserClick}
-            />
-          </div>
-
-          {/* Hero Browser */}
-          <div className="lg:col-span-6">
-            <HeroBrowser
-              meta={meta?.data ?? []}
-              metaLoading={metaLoading}
-              metaError={metaError}
-              lastSync={lastSync}
-              currentRank={currentRank}
-              takenHeroes={takenHeroes}
-              hasActiveSlot={draft.activeStepIndex !== null}
-              onHeroClick={handleHeroBrowserClick}
-              onSync={forceSync}
-              onRankChange={syncForRank}
-            />
-          </div>
+      <main className="max-w-[1400px] mx-auto px-5 py-5 space-y-5">
+        {/* Top: Draft Board + Advisor side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <DraftBoard
+            draft={draft}
+            phaseLabel={currentPhaseLabel}
+            onMapChange={handleMapChange}
+            onFirstPickChange={setFirstPick}
+            onStepClick={handleStepClick}
+            onRemoveHero={removeHeroFromStep}
+            onReset={resetDraft}
+          />
+          <DraftAdvisor
+            steps={draft.steps}
+            meta={meta?.data ?? []}
+            mapId={draft.map}
+            onHeroClick={handleHeroSelect}
+          />
         </div>
-      </main>
 
-      {showSearch && (
-        <HeroSearch
-          onSelect={handleHeroSelect}
-          excludeHeroes={takenHeroes}
-          onClose={() => { setShowSearch(false); setActiveStep(null); }}
+        {/* Bottom: Compact Hero Picker */}
+        <HeroPicker
+          meta={meta?.data ?? []}
+          metaLoading={metaLoading}
+          metaError={metaError}
+          lastSync={lastSync}
+          currentRank={currentRank}
+          takenHeroes={takenHeroes}
+          activeSlotInfo={activeSlotInfo}
+          onHeroClick={handleHeroSelect}
+          onSync={forceSync}
+          onRankChange={syncForRank}
         />
-      )}
+      </main>
 
       {showUserPool && (
         <UserPoolModal

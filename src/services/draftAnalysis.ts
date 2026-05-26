@@ -438,10 +438,16 @@ export function suggestFullComp(
   mapId: string | null,
 ): CompSuggestion {
   const taken = new Set(steps.filter(s => s.hero).map(s => s.hero!.name));
+  const allyPicks = steps
+    .filter(s => s.team === 'ally' && s.action === 'pick' && s.hero)
+    .map(s => s.hero!);
+  const enemyPicks = steps
+    .filter(s => s.team === 'enemy' && s.action === 'pick' && s.hero)
+    .map(s => s.hero!);
   const metaMap = new Map(meta.map(m => [m.hero, m]));
 
-  // We need: 1 Tank, 1 Healer, 1 Bruiser/Solo, 2 DPS (flex)
-  const slots: { role: HeroRole[]; label: string }[] = [
+  // Full template: 1 Tank, 1 Healer, 1 Bruiser/Solo, 2 DPS (flex)
+  const allSlots: { role: HeroRole[]; label: string }[] = [
     { role: ['Tank'], label: 'Tank' },
     { role: ['Healer'], label: 'Healer' },
     { role: ['Bruiser'], label: 'Offlane' },
@@ -449,10 +455,31 @@ export function suggestFullComp(
     { role: ['Ranged Assassin', 'Melee Assassin', 'Support'], label: 'Flex' },
   ];
 
-  const picked = new Set<string>();
-  const result: { hero: Hero; role: string; reason: string }[] = [];
+  // Remove slots already covered by ally picks
+  const allyRoles = allyPicks.map(h => h.role);
+  const slots = allSlots.filter(slot => {
+    // For single-role slots, skip if an ally already fills it
+    if (slot.role.length === 1) {
+      const idx = allyRoles.indexOf(slot.role[0]);
+      if (idx !== -1) {
+        allyRoles.splice(idx, 1); // consume only once (don't skip both DPS slots)
+        return false;
+      }
+    }
+    return true;
+  });
 
-  for (const slot of slots) {
+  // Cap to remaining open ally slots (5 - already picked)
+  const remainingSlots = Math.max(0, 5 - allyPicks.length);
+  const slotsToFill = slots.slice(0, remainingSlots);
+
+  const picked = new Set<string>();
+  // Seed synergy context with existing ally picks
+  const result: { hero: Hero; role: string; reason: string }[] = allyPicks.map(h => ({
+    hero: h, role: h.role, reason: 'Already picked',
+  }));
+
+  for (const slot of slotsToFill) {
     const candidates = HEROES
       .filter(h => slot.role.includes(h.role) && !taken.has(h.name) && !picked.has(h.name))
       .map(h => {
@@ -481,13 +508,22 @@ export function suggestFullComp(
           if (aff.reasons.length > 0 && aff.score >= 7) reasons.push(aff.reasons[0]);
         }
 
-        // Synergy with already picked
+        // Synergy with already picked (ally picks + previously suggested)
         for (const prev of result) {
           for (const [a, b] of SYNERGIES) {
             if ((h.name === a && prev.hero.name === b) || (h.name === b && prev.hero.name === a)) {
               score += 6;
               reasons.push(`synergy with ${prev.hero.name}`);
             }
+          }
+        }
+
+        // Counter bonus vs enemy picks
+        const enemyNames = new Set(enemyPicks.map(e => e.name));
+        for (const [counter, target, desc] of COUNTERS) {
+          if (h.name === counter && enemyNames.has(target)) {
+            score += 8;
+            reasons.push(`counters ${target}`);
           }
         }
 
@@ -502,6 +538,9 @@ export function suggestFullComp(
     }
   }
 
+  // Remove the seeded ally picks — only return suggestions
+  const suggestions = result.filter(r => r.reason !== 'Already picked');
+
   // Build strategy description from map strengths
   let strategy = 'Balanced composition';
   if (mapId) {
@@ -515,5 +554,5 @@ export function suggestFullComp(
     }
   }
 
-  return { heroes: result, strategy };
+  return { heroes: suggestions, strategy };
 }
