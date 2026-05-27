@@ -1,9 +1,18 @@
 import type { Plugin } from 'vite';
+import { loadEnv } from 'vite';
 import { getHeroStats } from './heroesprofile';
 
 export function apiPlugin(): Plugin {
   return {
     name: 'hots-api',
+    // Expose HEROESPROFILE_API_TOKEN from a local .env to the server-side fetch code
+    // (Vite doesn't put non-VITE_ vars on process.env by default).
+    config(_, { mode }) {
+      const env = loadEnv(mode, process.cwd(), '');
+      if (env.HEROESPROFILE_API_TOKEN && !process.env.HEROESPROFILE_API_TOKEN) {
+        process.env.HEROESPROFILE_API_TOKEN = env.HEROESPROFILE_API_TOKEN;
+      }
+    },
     configureServer(server) {
       server.middlewares.use('/api/meta', async (req, res) => {
         const url = new URL(req.url ?? '/', `http://${req.headers.host}`);

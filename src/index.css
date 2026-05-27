@@ -1,36 +1,69 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #0a0e1a;
-  --color-bg-card: #111827;
-  --color-bg-card-hover: #1a2332;
-  --color-border: #1f2937;
-  --color-border-active: #374151;
+  /* Background palette — richer dark navy (GitHub dark style) */
+  --color-bg-primary: #0d1117;
+  --color-bg-card: #161b22;
+  --color-bg-card-hover: #1c2333;
+  --color-bg-elevated: #1e2530;
+
+  /* Borders */
+  --color-border: #21262d;
+  --color-border-active: #3d444d;
+
+  /* Accent colors */
   --color-accent: #00d4ff;
   --color-accent-purple: #7c3aed;
   --color-accent-purple-light: #a78bfa;
-  --color-text-primary: #e2e8f0;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+
+  /* Text — brighter whites for better contrast */
+  --color-text-primary: #f0f6fc;
+  --color-text-secondary: #b1bac4;
+  --color-text-muted: #7d8590;
+
+  /* Tier colors */
   --color-tier-s: #ffd700;
   --color-tier-a: #c0c0c0;
   --color-tier-b: #cd7f32;
   --color-tier-c: #6b7280;
   --color-tier-d: #4b5563;
+
+  /* Map strength */
   --color-map-strong: #22c55e;
   --color-map-neutral: #eab308;
   --color-map-weak: #ef4444;
+
+  /* Draft color coding — instantly distinguishable */
   --color-ally: #3b82f6;
-  --color-enemy: #ef4444;
+  --color-ally-light: #60a5fa;
+  --color-enemy: #f59e0b;
+  --color-enemy-light: #fbbf24;
+
+  /* Ban colors — unmistakable danger/crimson */
+  --color-ban: #dc2626;
+  --color-ban-light: #ef4444;
+
+  /* Positive / strong */
+  --color-positive: #10b981;
+  --color-positive-light: #34d399;
+
+  /* Glassmorphism */
+  --color-glass: rgba(17, 24, 39, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-highlight: rgba(255, 255, 255, 0.04);
+
+  /* Fonts */
   --font-display: "Exo 2", "Inter", system-ui, sans-serif;
   --font-body: "Inter", "DM Sans", system-ui, sans-serif;
 }
 
+/* ── Scrollbar ── */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
 }
 
+/* ── Base body ── */
 body {
   margin: 0;
   background-color: var(--color-bg-primary);
@@ -43,38 +76,217 @@ body {
   min-height: 100vh;
 }
 
+/* ── Glow utilities ── */
 @utility glow-accent {
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  box-shadow:
+    0 0 12px rgba(0, 212, 255, 0.25),
+    0 0 4px rgba(0, 212, 255, 0.1);
 }
 
 @utility glow-purple {
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+  box-shadow:
+    0 0 12px rgba(124, 58, 237, 0.25),
+    0 0 4px rgba(124, 58, 237, 0.1);
 }
 
+@utility glow-ban {
+  box-shadow:
+    0 0 12px rgba(220, 38, 38, 0.3),
+    0 0 4px rgba(220, 38, 38, 0.15);
+}
+
+@utility glow-ally {
+  box-shadow:
+    0 0 12px rgba(59, 130, 246, 0.3),
+    0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+@utility glow-enemy {
+  box-shadow:
+    0 0 12px rgba(245, 158, 11, 0.3),
+    0 0 4px rgba(245, 158, 11, 0.1);
+}
+
+@utility glow-positive {
+  box-shadow:
+    0 0 12px rgba(16, 185, 129, 0.3),
+    0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* ── Card hover ── */
 @utility hero-card-hover {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+    box-shadow:
+      0 0 16px rgba(0, 212, 255, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
+/* ── Glassmorphism ── */
+@utility glass {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@utility glass-subtle {
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@utility glass-card {
+  background: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* ── GSAP-ready animation utilities ── */
+
+/* Initial state for hero entrance — GSAP animates from this */
+@utility hero-enter {
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+}
+
+/* Ban flash effect — base state for GSAP to trigger */
+@utility ban-flash {
+  animation: ban-flash-anim 0.4s ease-out;
+}
+
+@keyframes ban-flash-anim {
+  0% {
+    box-shadow: 0 0 0 rgba(220, 38, 38, 0);
+    background-color: transparent;
+  }
+  30% {
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.6), inset 0 0 20px rgba(220, 38, 38, 0.15);
+    background-color: rgba(220, 38, 38, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.2);
+    background-color: transparent;
+  }
+}
+
+/* Pick glow burst — plays on pick confirmation */
+@utility pick-glow {
+  animation: pick-glow-anim 0.5s ease-out;
+}
+
+@keyframes pick-glow-anim {
+  0% {
+    box-shadow: 0 0 0 rgba(0, 212, 255, 0);
+    transform: scale(1);
+  }
+  40% {
+    box-shadow: 0 0 28px rgba(0, 212, 255, 0.5), 0 0 8px rgba(0, 212, 255, 0.3);
+    transform: scale(1.03);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+    transform: scale(1);
+  }
+}
+
+/* ── Pulse glow — softer, more premium ── */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.15), 0 0 2px rgba(0, 212, 255, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.35), 0 0 6px rgba(0, 212, 255, 0.15);
+  }
 }
 
 @utility animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 2.5s ease-in-out infinite;
 }
 
+/* ── Pulse glow variants ── */
+@keyframes pulse-glow-purple {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(124, 58, 237, 0.15), 0 0 2px rgba(124, 58, 237, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(124, 58, 237, 0.35), 0 0 6px rgba(124, 58, 237, 0.15);
+  }
+}
+
+@utility animate-pulse-glow-purple {
+  animation: pulse-glow-purple 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow-ban {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(220, 38, 38, 0.15), 0 0 2px rgba(220, 38, 38, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(220, 38, 38, 0.35), 0 0 6px rgba(220, 38, 38, 0.15);
+  }
+}
+
+@utility animate-pulse-glow-ban {
+  animation: pulse-glow-ban 2.5s ease-in-out infinite;
+}
+
+/* ── Floating animation for active slots ── */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@utility animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ── Shimmer loading ── */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 @utility animate-shimmer {
-  background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-card-hover) 50%, var(--color-bg-card) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-card) 25%,
+    var(--color-bg-card-hover) 50%,
+    var(--color-bg-card) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Gradient text utilities ── */
+@utility text-gradient-purple {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility text-gradient-accent {
+  background: linear-gradient(135deg, #00d4ff, #00a8cc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Smooth transition presets ── */
+@utility transition-smooth {
+  transition: all 0.2s ease-out;
+}
+
+@utility transition-smooth-slow {
+  transition: all 0.3s ease-out;
 }

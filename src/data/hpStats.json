@@ -1,0 +1,637 @@
+{
+  "generatedAt": "2026-05-26T20:45:44.333Z",
+  "patch": "2.55.16.97039",
+  "gameType": "Storm League",
+  "heroes": [
+    {
+      "name": "Probius",
+      "winRate": 58.5,
+      "pickRate": 1.4,
+      "banRate": 0.2,
+      "gamesPlayed": 260
+    },
+    {
+      "name": "Deathwing",
+      "winRate": 54.9,
+      "pickRate": 9.7,
+      "banRate": 18.8,
+      "gamesPlayed": 1821
+    },
+    {
+      "name": "Kerrigan",
+      "winRate": 54.5,
+      "pickRate": 4.8,
+      "banRate": 0.8,
+      "gamesPlayed": 901
+    },
+    {
+      "name": "The Lost Vikings",
+      "winRate": 54.3,
+      "pickRate": 2.2,
+      "banRate": 2.4,
+      "gamesPlayed": 407
+    },
+    {
+      "name": "Rexxar",
+      "winRate": 54.2,
+      "pickRate": 4,
+      "banRate": 1.1,
+      "gamesPlayed": 753
+    },
+    {
+      "name": "Tyrael",
+      "winRate": 54.1,
+      "pickRate": 11.9,
+      "banRate": 2.4,
+      "gamesPlayed": 2237
+    },
+    {
+      "name": "Johanna",
+      "winRate": 54,
+      "pickRate": 24,
+      "banRate": 51.7,
+      "gamesPlayed": 4526
+    },
+    {
+      "name": "Hogger",
+      "winRate": 53.9,
+      "pickRate": 10.2,
+      "banRate": 11.2,
+      "gamesPlayed": 1929
+    },
+    {
+      "name": "Uther",
+      "winRate": 53.5,
+      "pickRate": 8.3,
+      "banRate": 1.1,
+      "gamesPlayed": 1562
+    },
+    {
+      "name": "Tyrande",
+      "winRate": 53.4,
+      "pickRate": 16.1,
+      "banRate": 1.1,
+      "gamesPlayed": 3029
+    },
+    {
+      "name": "Samuro",
+      "winRate": 53,
+      "pickRate": 5.6,
+      "banRate": 2.8,
+      "gamesPlayed": 1056
+    },
+    {
+      "name": "Rehgar",
+      "winRate": 52.8,
+      "pickRate": 19,
+      "banRate": 4.7,
+      "gamesPlayed": 3591
+    },
+    {
+      "name": "Alarak",
+      "winRate": 52.8,
+      "pickRate": 9.6,
+      "banRate": 4,
+      "gamesPlayed": 1817
+    },
+    {
+      "name": "Tracer",
+      "winRate": 52.8,
+      "pickRate": 4.5,
+      "banRate": 0.8,
+      "gamesPlayed": 847
+    },
+    {
+      "name": "Illidan",
+      "winRate": 52.6,
+      "pickRate": 8.8,
+      "banRate": 3.8,
+      "gamesPlayed": 1662
+    },
+    {
+      "name": "Maiev",
+      "winRate": 52.4,
+      "pickRate": 6.2,
+      "banRate": 2.8,
+      "gamesPlayed": 1167
+    },
+    {
+      "name": "Whitemane",
+      "winRate": 52.4,
+      "pickRate": 6.5,
+      "banRate": 0.9,
+      "gamesPlayed": 1228
+    },
+    {
+      "name": "Tychus",
+      "winRate": 52.4,
+      "pickRate": 21.4,
+      "banRate": 8.4,
+      "gamesPlayed": 4041
+    },
+    {
+      "name": "Sgt. Hammer",
+      "winRate": 52.2,
+      "pickRate": 4.4,
+      "banRate": 3,
+      "gamesPlayed": 822
+    },
+    {
+      "name": "Arthas",
+      "winRate": 52.1,
+      "pickRate": 18.5,
+      "banRate": 5.8,
+      "gamesPlayed": 3497
+    },
+    {
+      "name": "Mal'Ganis",
+      "winRate": 52,
+      "pickRate": 13.4,
+      "banRate": 21.4,
+      "gamesPlayed": 2531
+    },
+    {
+      "name": "Azmodan",
+      "winRate": 52,
+      "pickRate": 15.7,
+      "banRate": 7.9,
+      "gamesPlayed": 2964
+    },
+    {
+      "name": "Sonya",
+      "winRate": 51.9,
+      "pickRate": 9.7,
+      "banRate": 1,
+      "gamesPlayed": 1826
+    },
+    {
+      "name": "Falstad",
+      "winRate": 51.8,
+      "pickRate": 22.3,
+      "banRate": 37.2,
+      "gamesPlayed": 4213
+    },
+    {
+      "name": "Garrosh",
+      "winRate": 51.8,
+      "pickRate": 10,
+      "banRate": 42.5,
+      "gamesPlayed": 1887
+    },
+    {
+      "name": "Malthael",
+      "winRate": 51.8,
+      "pickRate": 6.7,
+      "banRate": 1.7,
+      "gamesPlayed": 1260
+    },
+    {
+      "name": "Gazlowe",
+      "winRate": 51.7,
+      "pickRate": 7.5,
+      "banRate": 0.7,
+      "gamesPlayed": 1408
+    },
+    {
+      "name": "Zarya",
+      "winRate": 51.5,
+      "pickRate": 3,
+      "banRate": 0.4,
+      "gamesPlayed": 567
+    },
+    {
+      "name": "Auriel",
+      "winRate": 51.1,
+      "pickRate": 17.7,
+      "banRate": 6.1,
+      "gamesPlayed": 3338
+    },
+    {
+      "name": "Imperius",
+      "winRate": 51.1,
+      "pickRate": 11.4,
+      "banRate": 1.8,
+      "gamesPlayed": 2151
+    },
+    {
+      "name": "Li Li",
+      "winRate": 51,
+      "pickRate": 16.7,
+      "banRate": 4.3,
+      "gamesPlayed": 3145
+    },
+    {
+      "name": "Sylvanas",
+      "winRate": 51,
+      "pickRate": 24,
+      "banRate": 24.2,
+      "gamesPlayed": 4528
+    },
+    {
+      "name": "Kharazim",
+      "winRate": 50.9,
+      "pickRate": 7.4,
+      "banRate": 0.3,
+      "gamesPlayed": 1386
+    },
+    {
+      "name": "Xul",
+      "winRate": 50.9,
+      "pickRate": 7.6,
+      "banRate": 1.1,
+      "gamesPlayed": 1430
+    },
+    {
+      "name": "Kel'Thuzad",
+      "winRate": 50.8,
+      "pickRate": 7.2,
+      "banRate": 2.8,
+      "gamesPlayed": 1366
+    },
+    {
+      "name": "Raynor",
+      "winRate": 50.8,
+      "pickRate": 16.9,
+      "banRate": 2.6,
+      "gamesPlayed": 3191
+    },
+    {
+      "name": "Lunara",
+      "winRate": 50.8,
+      "pickRate": 7,
+      "banRate": 0.6,
+      "gamesPlayed": 1324
+    },
+    {
+      "name": "Valla",
+      "winRate": 50.5,
+      "pickRate": 29.8,
+      "banRate": 19.2,
+      "gamesPlayed": 5623
+    },
+    {
+      "name": "Leoric",
+      "winRate": 50.4,
+      "pickRate": 15.6,
+      "banRate": 3,
+      "gamesPlayed": 2944
+    },
+    {
+      "name": "The Butcher",
+      "winRate": 50.3,
+      "pickRate": 6.9,
+      "banRate": 2,
+      "gamesPlayed": 1305
+    },
+    {
+      "name": "Thrall",
+      "winRate": 50.3,
+      "pickRate": 22.4,
+      "banRate": 12.2,
+      "gamesPlayed": 4216
+    },
+    {
+      "name": "Nazeebo",
+      "winRate": 50.3,
+      "pickRate": 24.9,
+      "banRate": 8.9,
+      "gamesPlayed": 4695
+    },
+    {
+      "name": "Blaze",
+      "winRate": 50.2,
+      "pickRate": 8.8,
+      "banRate": 1.7,
+      "gamesPlayed": 1656
+    },
+    {
+      "name": "Mei",
+      "winRate": 50.2,
+      "pickRate": 7,
+      "banRate": 1.3,
+      "gamesPlayed": 1310
+    },
+    {
+      "name": "E.T.C.",
+      "winRate": 50.1,
+      "pickRate": 16.7,
+      "banRate": 5.2,
+      "gamesPlayed": 3151
+    },
+    {
+      "name": "Jaina",
+      "winRate": 50,
+      "pickRate": 11.8,
+      "banRate": 0.9,
+      "gamesPlayed": 2227
+    },
+    {
+      "name": "Lt. Morales",
+      "winRate": 50,
+      "pickRate": 8.2,
+      "banRate": 2,
+      "gamesPlayed": 1539
+    },
+    {
+      "name": "Stukov",
+      "winRate": 50,
+      "pickRate": 10.6,
+      "banRate": 15.4,
+      "gamesPlayed": 1991
+    },
+    {
+      "name": "Varian",
+      "winRate": 49.9,
+      "pickRate": 18.5,
+      "banRate": 5.1,
+      "gamesPlayed": 3480
+    },
+    {
+      "name": "Qhira",
+      "winRate": 49.8,
+      "pickRate": 5.3,
+      "banRate": 0.6,
+      "gamesPlayed": 1004
+    },
+    {
+      "name": "Artanis",
+      "winRate": 49.6,
+      "pickRate": 15.6,
+      "banRate": 4.5,
+      "gamesPlayed": 2943
+    },
+    {
+      "name": "Ragnaros",
+      "winRate": 49.3,
+      "pickRate": 9.1,
+      "banRate": 4.1,
+      "gamesPlayed": 1721
+    },
+    {
+      "name": "Fenix",
+      "winRate": 49.3,
+      "pickRate": 4.2,
+      "banRate": 0.3,
+      "gamesPlayed": 798
+    },
+    {
+      "name": "Li-Ming",
+      "winRate": 49.2,
+      "pickRate": 22.2,
+      "banRate": 9.1,
+      "gamesPlayed": 4185
+    },
+    {
+      "name": "Zeratul",
+      "winRate": 49.2,
+      "pickRate": 5.8,
+      "banRate": 2.6,
+      "gamesPlayed": 1088
+    },
+    {
+      "name": "Deckard",
+      "winRate": 49,
+      "pickRate": 8.8,
+      "banRate": 1.4,
+      "gamesPlayed": 1659
+    },
+    {
+      "name": "Chen",
+      "winRate": 48.9,
+      "pickRate": 13.1,
+      "banRate": 13.8,
+      "gamesPlayed": 2473
+    },
+    {
+      "name": "Brightwing",
+      "winRate": 48.8,
+      "pickRate": 23.2,
+      "banRate": 40.4,
+      "gamesPlayed": 4368
+    },
+    {
+      "name": "Orphea",
+      "winRate": 48.8,
+      "pickRate": 7.7,
+      "banRate": 0.7,
+      "gamesPlayed": 1443
+    },
+    {
+      "name": "D.Va",
+      "winRate": 48.8,
+      "pickRate": 6.9,
+      "banRate": 0.7,
+      "gamesPlayed": 1308
+    },
+    {
+      "name": "Cho",
+      "winRate": 48.8,
+      "pickRate": 2.8,
+      "banRate": 3.3,
+      "gamesPlayed": 519
+    },
+    {
+      "name": "Gall",
+      "winRate": 48.8,
+      "pickRate": 2.8,
+      "banRate": 1.5,
+      "gamesPlayed": 519
+    },
+    {
+      "name": "Anduin",
+      "winRate": 48.7,
+      "pickRate": 28.9,
+      "banRate": 24.6,
+      "gamesPlayed": 5455
+    },
+    {
+      "name": "Tassadar",
+      "winRate": 48.7,
+      "pickRate": 12.8,
+      "banRate": 0.9,
+      "gamesPlayed": 2414
+    },
+    {
+      "name": "Dehaka",
+      "winRate": 48.7,
+      "pickRate": 9.6,
+      "banRate": 16.3,
+      "gamesPlayed": 1807
+    },
+    {
+      "name": "Zul'jin",
+      "winRate": 48.6,
+      "pickRate": 9.7,
+      "banRate": 2.1,
+      "gamesPlayed": 1837
+    },
+    {
+      "name": "Kael'thas",
+      "winRate": 48.5,
+      "pickRate": 20.4,
+      "banRate": 11.6,
+      "gamesPlayed": 3840
+    },
+    {
+      "name": "Greymane",
+      "winRate": 48.4,
+      "pickRate": 9.3,
+      "banRate": 1.1,
+      "gamesPlayed": 1761
+    },
+    {
+      "name": "Mephisto",
+      "winRate": 48.3,
+      "pickRate": 3.8,
+      "banRate": 0.7,
+      "gamesPlayed": 725
+    },
+    {
+      "name": "Junkrat",
+      "winRate": 48.2,
+      "pickRate": 8.1,
+      "banRate": 2.3,
+      "gamesPlayed": 1526
+    },
+    {
+      "name": "Ana",
+      "winRate": 47.6,
+      "pickRate": 8,
+      "banRate": 1.4,
+      "gamesPlayed": 1505
+    },
+    {
+      "name": "Cassia",
+      "winRate": 47.6,
+      "pickRate": 7.2,
+      "banRate": 0.5,
+      "gamesPlayed": 1356
+    },
+    {
+      "name": "Gul'dan",
+      "winRate": 47.6,
+      "pickRate": 12.8,
+      "banRate": 2.3,
+      "gamesPlayed": 2411
+    },
+    {
+      "name": "Muradin",
+      "winRate": 47.2,
+      "pickRate": 24.3,
+      "banRate": 5.4,
+      "gamesPlayed": 4577
+    },
+    {
+      "name": "Hanzo",
+      "winRate": 47.2,
+      "pickRate": 13.6,
+      "banRate": 3.2,
+      "gamesPlayed": 2560
+    },
+    {
+      "name": "Zagara",
+      "winRate": 47,
+      "pickRate": 7.3,
+      "banRate": 1.7,
+      "gamesPlayed": 1376
+    },
+    {
+      "name": "Anub'arak",
+      "winRate": 46.9,
+      "pickRate": 12.7,
+      "banRate": 8.9,
+      "gamesPlayed": 2399
+    },
+    {
+      "name": "Nova",
+      "winRate": 46.8,
+      "pickRate": 5.5,
+      "banRate": 0.6,
+      "gamesPlayed": 1040
+    },
+    {
+      "name": "Stitches",
+      "winRate": 46.6,
+      "pickRate": 18.4,
+      "banRate": 13.3,
+      "gamesPlayed": 3473
+    },
+    {
+      "name": "Genji",
+      "winRate": 46.4,
+      "pickRate": 6.7,
+      "banRate": 3.4,
+      "gamesPlayed": 1256
+    },
+    {
+      "name": "Valeera",
+      "winRate": 46.3,
+      "pickRate": 3.8,
+      "banRate": 1,
+      "gamesPlayed": 717
+    },
+    {
+      "name": "Chromie",
+      "winRate": 46.3,
+      "pickRate": 8,
+      "banRate": 3.1,
+      "gamesPlayed": 1511
+    },
+    {
+      "name": "Yrel",
+      "winRate": 46.2,
+      "pickRate": 3.4,
+      "banRate": 0.4,
+      "gamesPlayed": 634
+    },
+    {
+      "name": "Malfurion",
+      "winRate": 46.2,
+      "pickRate": 10.4,
+      "banRate": 1.7,
+      "gamesPlayed": 1959
+    },
+    {
+      "name": "Alexstrasza",
+      "winRate": 46.1,
+      "pickRate": 4.2,
+      "banRate": 0.5,
+      "gamesPlayed": 785
+    },
+    {
+      "name": "Murky",
+      "winRate": 45.7,
+      "pickRate": 4.4,
+      "banRate": 1.1,
+      "gamesPlayed": 825
+    },
+    {
+      "name": "Medivh",
+      "winRate": 45.6,
+      "pickRate": 5.3,
+      "banRate": 2.2,
+      "gamesPlayed": 995
+    },
+    {
+      "name": "Lúcio",
+      "winRate": 45.1,
+      "pickRate": 7.8,
+      "banRate": 1.8,
+      "gamesPlayed": 1471
+    },
+    {
+      "name": "Diablo",
+      "winRate": 44.3,
+      "pickRate": 15.4,
+      "banRate": 8.9,
+      "gamesPlayed": 2900
+    },
+    {
+      "name": "Abathur",
+      "winRate": 41.5,
+      "pickRate": 8.8,
+      "banRate": 8.8,
+      "gamesPlayed": 1652
+    }
+  ]
+}

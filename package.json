@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scrape:hp": "node scripts/scrape-heroesprofile.mjs",
+    "build:matchups": "node --experimental-strip-types scripts/build-matchups.mjs"
   },
   "dependencies": {
+    "gsap": "^3.15.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -25,6 +28,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
