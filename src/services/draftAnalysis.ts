@@ -1,6 +1,14 @@
 import type { Hero, HeroMeta, HeroRole, DraftStep } from '../types';
 import { HEROES } from '../data/heroes';
 import { getHeroMapAffinity, MAP_TRAIT_WEIGHTS } from '../data/heroTraits';
+import { getSynergy, getCounter } from './matchupData';
+
+// How strongly the data-driven matchup deltas (WR swing in points) weigh into scoring.
+const SYNERGY_FACTOR = 1.5;   // bonus per synergy point with an ally
+const COUNTER_FACTOR = 1.5;   // bonus per point our hero counters an enemy
+const COUNTERED_PENALTY = 1;  // penalty per point an enemy counters our hero
+// Minimum WR swing (points) to surface a relationship as a written reason.
+const REASON_THRESHOLD = 3;
 
 // --- Composition rules ---
 
@@ -33,56 +41,8 @@ const WAVECLEAR_HEROES = new Set([
   'Fenix', 'Tassadar', 'Probius', 'Gazlowe', 'Blaze',
 ]);
 
-// Known synergy pairs
-const SYNERGIES: [string, string, string][] = [
-  ['Zarya', 'E.T.C.', 'Graviton + Mosh Pit combo'],
-  ['Zarya', 'Diablo', 'Graviton + Apocalypse combo'],
-  ['Zarya', 'Garrosh', 'Graviton + Warlord combo'],
-  ['E.T.C.', 'Jaina', 'Mosh Pit + Ring of Frost'],
-  ['E.T.C.', 'Kael\'thas', 'Mosh Pit + AoE burst'],
-  ['Tyrael', 'Illidan', 'Sanctification enables dive'],
-  ['Tyrael', 'Greymane', 'Sanctification + dive damage'],
-  ['Abathur', 'Illidan', 'Hat + dive sustain'],
-  ['Abathur', 'Greymane', 'Hat + burst amplification'],
-  ['Malfurion', 'Jaina', 'Root + Ring of Frost follow-up'],
-  ['Uther', 'Valla', 'Divine Shield + aggressive carry'],
-  ['Dehaka', 'Zeratul', 'Isolation + Void Prison combo'],
-  ['Rehgar', 'Thrall', 'Ancestral + aggressive bruiser'],
-  ['Anduin', 'Diablo', 'Lightbomb + displacement'],
-  ['Ana', 'Valla', 'Nano Boost + sustained damage'],
-  ['Ana', 'Greymane', 'Nano Boost + burst'],
-  ['Auriel', 'Gul\'dan', 'Hope battery + sustain damage'],
-  ['Auriel', 'Valla', 'Hope battery + consistent DPS'],
-  ['Lucio', 'Illidan', 'Speed + dive enabler'],
-];
-
-// Counter relationships: [counter, target, reason]
-const COUNTERS: [string, string, string][] = [
-  ['Anub\'arak', 'Jaina', 'Spell armor + cocoon shuts down mages'],
-  ['Anub\'arak', 'Kael\'thas', 'Spell armor absorbs burst'],
-  ['Anub\'arak', 'Li-Ming', 'Dive + spell armor vs mage'],
-  ['Cassia', 'Valla', 'Blind counters AA heroes'],
-  ['Cassia', 'Raynor', 'Blind + avoidance vs AA'],
-  ['Cassia', 'Zul\'jin', 'Blind shuts down AA carry'],
-  ['Johanna', 'Illidan', 'Blind + CC stops dive'],
-  ['Johanna', 'Tracer', 'Blind + unstoppable vs dive'],
-  ['Li Li', 'Illidan', 'Blind on trait counters AA dive'],
-  ['Li Li', 'Tracer', 'Blind + easy healing vs dive'],
-  ['E.T.C.', 'Illidan', 'Displacement + CC stops dive'],
-  ['Garrosh', 'Illidan', 'Throw + taunt punishes dive'],
-  ['Garrosh', 'Tracer', 'Throw punishes aggressive positioning'],
-  ['Arthas', 'Illidan', 'Attack speed slow + root destroys melee'],
-  ['Arthas', 'Thrall', 'Frozen Tempest slows melee bruisers'],
-  ['Brightwing', 'Illidan', 'Polymorph shuts down dive'],
-  ['Brightwing', 'Tracer', 'Polymorph + global presence'],
-  ['Tyrael', 'Chromie', 'Dive enables closing gap on long range'],
-  ['Zeratul', 'Chromie', 'Dive assassin kills immobile mages'],
-  ['Zeratul', 'Sgt. Hammer', 'Dive punishes immobile heroes'],
-  ['Malthael', 'Cho', 'Percent damage melts high HP'],
-  ['Malthael', 'Deathwing', 'Percent damage ignores armor'],
-  ['Tychus', 'Cho', 'Minigun % damage vs high HP'],
-  ['Tychus', 'Deathwing', 'Minigun shreds high HP targets'],
-];
+// Synergy & counter relationships are no longer hardcoded — they come from the per-map
+// matchup dataset (matchups.json) via getSynergy / getCounter in ./matchupData.
 
 // --- Analysis functions ---
 
@@ -182,15 +142,18 @@ function checkComposition(allyPicks: Hero[]): CompCheck[] {
   return checks;
 }
 
-function findSynergies(allyPicks: Hero[]): string[] {
-  const names = new Set(allyPicks.map(h => h.name));
-  const found: string[] = [];
-  for (const [a, b, desc] of SYNERGIES) {
-    if (names.has(a) && names.has(b)) {
-      found.push(`${a} + ${b}: ${desc}`);
+function findSynergies(allyPicks: Hero[], mapId: string | null): string[] {
+  const found: { text: string; delta: number }[] = [];
+  for (let i = 0; i < allyPicks.length; i++) {
+    for (let j = i + 1; j < allyPicks.length; j++) {
+      const a = allyPicks[i].name, b = allyPicks[j].name;
+      const delta = getSynergy(mapId, a, b);
+      if (delta >= REASON_THRESHOLD) {
+        found.push({ text: `${a} + ${b}: +${delta.toFixed(1)}% win rate together`, delta });
+      }
     }
   }
-  return found;
+  return found.sort((x, y) => y.delta - x.delta).map(f => f.text);
 }
 
 function scorePick(
@@ -246,25 +209,26 @@ function scorePick(
     reasons.push('Team needs a Healer');
   }
 
-  // Synergy bonus
-  const allyNames = new Set(allyPicks.map(h => h.name));
-  for (const [a, b, desc] of SYNERGIES) {
-    if (hero.name === a && allyNames.has(b)) {
-      score += 8;
-      reasons.push(`Synergy with ${b}: ${desc}`);
-    }
-    if (hero.name === b && allyNames.has(a)) {
-      score += 8;
-      reasons.push(`Synergy with ${a}: ${desc}`);
+  // Synergy with allies (data-driven, per map). Positive = good pairing, negative = clashes.
+  for (const ally of allyPicks) {
+    const delta = getSynergy(mapId, hero.name, ally.name);
+    if (delta !== 0) {
+      score += delta * SYNERGY_FACTOR;
+      if (delta >= REASON_THRESHOLD) reasons.push(`+${delta.toFixed(1)}% with ${ally.name}`);
     }
   }
 
-  // Counter bonus
-  const enemyNames = new Set(enemyPicks.map(h => h.name));
-  for (const [counter, target, desc] of COUNTERS) {
-    if (hero.name === counter && enemyNames.has(target)) {
-      score += 10;
-      reasons.push(`Counters ${target}: ${desc}`);
+  // Counters vs enemies, and being countered by them (data-driven, per map).
+  for (const enemy of enemyPicks) {
+    const counters = getCounter(mapId, hero.name, enemy.name);
+    if (counters > 0) {
+      score += counters * COUNTER_FACTOR;
+      if (counters >= REASON_THRESHOLD) reasons.push(`Counters ${enemy.name} (+${counters.toFixed(1)}%)`);
+    }
+    const counteredBy = getCounter(mapId, enemy.name, hero.name);
+    if (counteredBy > 0) {
+      score -= counteredBy * COUNTERED_PENALTY;
+      if (counteredBy >= REASON_THRESHOLD) reasons.push(`⚠ Countered by ${enemy.name} (-${counteredBy.toFixed(1)}%)`);
     }
   }
 
@@ -333,21 +297,21 @@ function scoreBan(
     reasons.push(`${meta.banRate.toFixed(1)}% ban rate — widely feared`);
   }
 
-  // Would counter our team
-  const allyNames = new Set(allyPicks.map(h => h.name));
-  for (const [counter, target] of COUNTERS) {
-    if (hero.name === counter && allyNames.has(target)) {
-      score += 8;
-      reasons.push(`Would counter your ${target}`);
+  // Would counter our picks (ban to protect them) — data-driven, per map.
+  for (const ally of allyPicks) {
+    const c = getCounter(mapId, hero.name, ally.name);
+    if (c >= REASON_THRESHOLD) {
+      score += c * 1.2;
+      reasons.push(`Would counter your ${ally.name} (+${c.toFixed(1)}%)`);
     }
   }
 
-  // Would synergize with enemy team
-  const enemyNames = new Set(enemyPicks.map(h => h.name));
-  for (const [a, b, desc] of SYNERGIES) {
-    if ((hero.name === a && enemyNames.has(b)) || (hero.name === b && enemyNames.has(a))) {
-      score += 6;
-      reasons.push(`Would synergize with enemy: ${desc}`);
+  // Would pair strongly with the enemy team — data-driven, per map.
+  for (const enemy of enemyPicks) {
+    const s = getSynergy(mapId, hero.name, enemy.name);
+    if (s >= REASON_THRESHOLD) {
+      score += s;
+      reasons.push(`Would pair with enemy ${enemy.name} (+${s.toFixed(1)}%)`);
     }
   }
 
@@ -370,7 +334,7 @@ export function analyzeDraft(
 
   // Composition analysis
   const compChecks = checkComposition(allyPicks);
-  const synergiesFound = findSynergies(allyPicks);
+  const synergiesFound = findSynergies(allyPicks, mapId);
 
   // Warnings
   const warnings: string[] = [];
@@ -508,22 +472,21 @@ export function suggestFullComp(
           if (aff.reasons.length > 0 && aff.score >= 7) reasons.push(aff.reasons[0]);
         }
 
-        // Synergy with already picked (ally picks + previously suggested)
+        // Synergy with already picked (ally picks + previously suggested) — data-driven.
         for (const prev of result) {
-          for (const [a, b] of SYNERGIES) {
-            if ((h.name === a && prev.hero.name === b) || (h.name === b && prev.hero.name === a)) {
-              score += 6;
-              reasons.push(`synergy with ${prev.hero.name}`);
-            }
+          const delta = getSynergy(mapId, h.name, prev.hero.name);
+          if (delta !== 0) {
+            score += delta * SYNERGY_FACTOR;
+            if (delta >= REASON_THRESHOLD) reasons.push(`+${delta.toFixed(1)}% with ${prev.hero.name}`);
           }
         }
 
-        // Counter bonus vs enemy picks
-        const enemyNames = new Set(enemyPicks.map(e => e.name));
-        for (const [counter, target] of COUNTERS) {
-          if (h.name === counter && enemyNames.has(target)) {
-            score += 8;
-            reasons.push(`counters ${target}`);
+        // Counter bonus vs enemy picks — data-driven.
+        for (const enemy of enemyPicks) {
+          const c = getCounter(mapId, h.name, enemy.name);
+          if (c > 0) {
+            score += c * COUNTER_FACTOR;
+            if (c >= REASON_THRESHOLD) reasons.push(`counters ${enemy.name}`);
           }
         }
 

@@ -17,6 +17,12 @@ dist-ssr
 .env.*
 !.env.example
 
+# Raw matchup DB (teammate-provided, ~12MB) — committed src/data/matchups.json is generated from it
+data/matchup-tables.db
+# Temp discovery probes
+scripts/_*.mjs
+scripts/_probe_*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

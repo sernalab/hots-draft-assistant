@@ -1,7 +1,7 @@
 # HotS Draft Assistant
 
 ## Overview
-Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provides rule-based pick and ban recommendations using live win-rate data from HeroesProfile, plus team-composition heuristics (role coverage, CC, waveclear, synergies, counters, map affinity).
+Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provides rule-based pick and ban recommendations using **per-map** win-rate, synergy and counter data (from `matchup-tables.db`), plus team-composition heuristics (role coverage, CC, waveclear, map affinity). HeroesProfile supplies pick/ban rates.
 
 **No AI / LLM integration. All logic is deterministic.**
 
@@ -15,8 +15,9 @@ Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provi
 ## Architecture
 
 ### Services (`src/services/`)
-- `metaSync.ts` — Fetches `/api/meta`, normalises into `HeroMeta[]`, caches in localStorage (2h TTL keyed by map+rank)
-- `draftAnalysis.ts` — Pure scoring functions: composition checks, pick/ban suggestions, full-comp builder. Drives `DraftAdvisor`.
+- `metaSync.ts` — Fetches `/api/meta`, normalises into `HeroMeta[]`, caches in localStorage (2h TTL keyed by map+rank). **Overrides winRate + gamesPlayed (and thus tier) from the per-map matchup data** (`matchupData`); pick/ban rate stay global from the HeroesProfile snapshot.
+- `matchupData.ts` — Loads bundled `src/data/matchups.json` and exposes per-map lookups: `getMapWr(map, hero)`, `getSynergy(map, a, b)`, `getCounter(map, winner, loser)`. Maps absent from the DB and the "all maps" view fall back to a `_global` weighted aggregate.
+- `draftAnalysis.ts` — Pure scoring functions: composition checks, pick/ban suggestions, full-comp builder. **Synergies/counters are data-driven via `matchupData` (no hardcoded pairs).** Drives `DraftAdvisor`.
 - `storage.ts` — localStorage wrapper for `MetaCache` and `UserPreferences`
 
 ### Hooks (`src/hooks/`)
@@ -38,7 +39,8 @@ Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provi
 - `netlify/functions/meta.ts` — Production endpoint, same logic.
 
 ### Scripts (`scripts/`)
-- `scrape-heroesprofile.mjs` (`npm run scrape:hp`) — Drives a real Chromium (Playwright) **locally** to clear `www.heroesprofile.com`'s Cloudflare challenge, calls its internal stats endpoint, and writes `src/data/hpStats.json`. Then commit the JSON and redeploy. Headless by default; `HEADED=1` to show the browser. Free alternative to the paid token (circumvents their Patreon/Cloudflare — fragile + against ToS).
+- `scrape-heroesprofile.mjs` (`npm run scrape:hp`) — Drives a real Chromium (Playwright) **locally** to clear `www.heroesprofile.com`'s Cloudflare challenge, calls its internal stats endpoint, and writes `src/data/hpStats.json`. Then commit the JSON and redeploy. Headless by default; `HEADED=1` to show the browser. Free alternative to the paid token (circumvents their Patreon/Cloudflare — fragile + against ToS). NB: that endpoint allows only **one** POST per Cloudflare clear, so multi-query scrapes (per-map, matchups) aren't viable this way.
+- `build-matchups.mjs` (`npm run build:matchups`) — Transforms `data/matchup-tables.db` (gitignored, ~12 MB SQLite) into the committed, compact `src/data/matchups.json`. Prunes synergy/counter pairs to `|Δ|≥2 & weight≥0.5` and adds a `_global` weighted aggregate. Run via `node --experimental-strip-types` (imports `maps.ts`).
 
 ## Design
 - Dark gaming theme (`#0a0e1a` bg, `#00d4ff` cyan accent, `#7c3aed` purple for the advisor panel)
@@ -46,8 +48,9 @@ Real-time draft assistant for Heroes of the Storm (Storm League / ranked). Provi
 - Tablet-first (designed as a second-screen companion)
 
 ## Data Sources
-- **HeroesProfile official API** (`api.heroesprofile.com`) — Storm League win/pick/ban rates. Requires `HEROESPROFILE_API_TOKEN` (Patreon, ~5€/mo); honors rank tier. `www.heroesprofile.com` is behind a Cloudflare challenge, so a plain fetch can't scrape it.
-- **HeroesProfile local snapshot** (`src/data/hpStats.json`) — free alternative, produced by `npm run scrape:hp` (Playwright clears Cloudflare locally). Global Storm League, manual refresh.
+- **Matchup DB** (`data/matchup-tables.db` → `src/data/matchups.json`) — teammate-provided SQLite with **per-map** hero win rate + sample size (`wr_base`), synergy deltas (`delta_aliado`) and counter deltas (`delta_counter`). The primary source for tiers, synergies and counters. Has 13 of 14 maps (no Blackheart's Bay → global fallback) and no pick/ban rate.
+- **HeroesProfile official API** (`api.heroesprofile.com`) — pick/ban rates (and a global WR fallback). Requires `HEROESPROFILE_API_TOKEN` (Patreon, ~5€/mo); honors rank tier. `www.heroesprofile.com` is behind a Cloudflare challenge, so a plain fetch can't scrape it.
+- **HeroesProfile local snapshot** (`src/data/hpStats.json`) — free pick/ban source, produced by `npm run scrape:hp` (Playwright clears Cloudflare locally). Global Storm League, manual refresh.
 - Hero list, roles and map metadata are bundled statically in `src/data/`.
 
 ## Refreshing data ("actualiza datos")
