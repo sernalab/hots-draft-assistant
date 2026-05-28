@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
+import { motion } from 'motion/react';
 import { DraftBoard } from './components/DraftBoard';
 import { DraftAdvisor } from './components/DraftAdvisor';
 import { HeroPicker } from './components/HeroPicker';
 import { UserPoolModal } from './components/UserPoolModal';
+import { MapSelect } from './components/MapSelect';
 import { useDraft } from './hooks/useDraft';
 import { useMeta } from './hooks/useMeta';
-import { getUserPreferences, setUserPreferences } from './services/storage';
+import { getUserPreferences, setUserPreferences, setLastMap } from './services/storage';
 import type { Hero, UserPreferences } from './types';
 
 export default function App() {
@@ -21,13 +23,16 @@ export default function App() {
     currentPhaseLabel,
   } = useDraft();
 
-  const { meta, loading: metaLoading, error: metaError, lastSync, currentRank, forceSync, syncForMap, syncForRank } = useMeta();
+  const { meta, loading: metaLoading, error: metaError, lastSync, forceSync, syncForMap } = useMeta();
   const [prefs, setPrefs] = useState<UserPreferences>(getUserPreferences);
   const [showUserPool, setShowUserPool] = useState(false);
+  const [showMapSelect, setShowMapSelect] = useState(false);
 
   const handleMapChange = useCallback((mapId: string) => {
     setMap(mapId);
     syncForMap(mapId || null);
+    setLastMap(mapId || null);
+    setShowMapSelect(false);
   }, [setMap, syncForMap]);
 
   const handleStepClick = useCallback((index: number) => {
@@ -60,22 +65,22 @@ export default function App() {
     : null;
 
   return (
-    <div className="min-h-screen bg-bg-primary bg-gradient-to-b from-[#111827] via-bg-primary to-bg-primary">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="glass-subtle sticky top-0 z-40">
-        <div className="h-px bg-gradient-to-r from-accent via-accent-purple to-accent opacity-60" />
+        <div className="h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent shadow-[0_0_12px_rgba(245,183,61,0.6)]" />
         <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-accent-purple/20 border border-white/10 flex items-center justify-center">
-              <span className="text-accent font-bold text-sm font-[family-name:var(--font-display)]">H</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-sm glow-accent">
+              <span className="text-bg-primary font-extrabold text-base font-[family-name:var(--font-display)]">H</span>
             </div>
-            <h1 className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">
-              HotS Draft <span className="bg-gradient-to-r from-accent to-accent-purple-light bg-clip-text text-transparent">Assistant</span>
+            <h1 className="text-base font-extrabold uppercase tracking-[0.18em] text-text-primary font-[family-name:var(--font-display)]">
+              HotS Draft <span className="text-gradient-accent">Assistant</span>
             </h1>
           </div>
           <button
             onClick={() => setShowUserPool(true)}
-            className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 hover:border-accent/30 hover:bg-white/8 flex items-center justify-center text-text-secondary hover:text-text-primary transition-all"
+            className="w-8 h-8 rounded-lg bg-bg-card border border-border hover:border-accent/40 hover:bg-bg-card-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-all"
             title="Settings"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -86,39 +91,70 @@ export default function App() {
       </header>
 
       <main className="max-w-[1400px] mx-auto px-5 py-5 space-y-5">
-        {/* Top: Draft Board + Advisor side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <DraftBoard
-            draft={draft}
-            phaseLabel={currentPhaseLabel}
-            onMapChange={handleMapChange}
-            onFirstPickChange={setFirstPick}
-            onStepClick={handleStepClick}
-            onRemoveHero={removeHeroFromStep}
-            onReset={resetDraft}
-          />
-          <DraftAdvisor
-            steps={draft.steps}
-            meta={meta?.data ?? []}
-            mapId={draft.map}
-            onHeroClick={handleHeroSelect}
-          />
-        </div>
+        {!draft.map ? (
+          /* Pre-draft gate: pick a battleground first */
+          <MapSelect currentMap={null} onSelect={handleMapChange} />
+        ) : (
+          <>
+            {/* Top: full-width landscape Advisor */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <DraftAdvisor
+                steps={draft.steps}
+                meta={meta?.data ?? []}
+                mapId={draft.map}
+                onHeroClick={handleHeroSelect}
+              />
+            </motion.div>
 
-        {/* Bottom: Compact Hero Picker */}
-        <HeroPicker
-          meta={meta?.data ?? []}
-          metaLoading={metaLoading}
-          metaError={metaError}
-          lastSync={lastSync}
-          currentRank={currentRank}
-          takenHeroes={takenHeroes}
-          activeSlotInfo={activeSlotInfo}
-          onHeroClick={handleHeroSelect}
-          onSync={forceSync}
-          onRankChange={syncForRank}
-        />
+            {/* Middle: full-width Draft Arena */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <DraftBoard
+                draft={draft}
+                phaseLabel={currentPhaseLabel}
+                onChangeMap={() => setShowMapSelect(true)}
+                onFirstPickChange={setFirstPick}
+                onStepClick={handleStepClick}
+                onRemoveHero={removeHeroFromStep}
+                onReset={resetDraft}
+              />
+            </motion.div>
+
+            {/* Bottom: full-width Hero Picker */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <HeroPicker
+                meta={meta?.data ?? []}
+                metaLoading={metaLoading}
+                metaError={metaError}
+                lastSync={lastSync}
+                takenHeroes={takenHeroes}
+                activeSlotInfo={activeSlotInfo}
+                onHeroClick={handleHeroSelect}
+                onSync={forceSync}
+              />
+            </motion.div>
+          </>
+        )}
       </main>
+
+      {showMapSelect && draft.map && (
+        <MapSelect
+          currentMap={draft.map}
+          onSelect={handleMapChange}
+          onClose={() => setShowMapSelect(false)}
+        />
+      )}
 
       {showUserPool && (
         <UserPoolModal

@@ -4,7 +4,25 @@ const KEYS = {
   META_CACHE: 'hots_meta_cache',
   USER_PREFS: 'hots_user_preferences',
   DRAFT_STATE: 'hots_draft_state',
+  LAST_MAP: 'hots_last_map',
 } as const;
+
+export function getLastMap(): string | null {
+  try {
+    return localStorage.getItem(KEYS.LAST_MAP) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setLastMap(mapId: string | null): void {
+  try {
+    if (mapId) localStorage.setItem(KEYS.LAST_MAP, mapId);
+    else localStorage.removeItem(KEYS.LAST_MAP);
+  } catch {
+    // ignore
+  }
+}
 
 export function getMetaCache(): MetaCache | null {
   try {

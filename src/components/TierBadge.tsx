@@ -1,11 +1,12 @@
 import type { Tier } from '../types';
 
+// Glowing tinted chips, readable on the obsidian surface.
 const tierStyles: Record<Tier, string> = {
-  S: 'bg-tier-s/15 text-tier-s border-tier-s/50 shadow-[0_0_8px_rgba(255,215,0,0.2)]',
-  A: 'bg-tier-a/15 text-tier-a border-tier-a/50',
-  B: 'bg-tier-b/15 text-tier-b border-tier-b/50',
-  C: 'bg-tier-c/10 text-tier-c/70 border-tier-c/30',
-  D: 'bg-tier-d/10 text-tier-d/60 border-tier-d/20',
+  S: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  A: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  B: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  C: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+  D: 'bg-slate-600/15 text-slate-400 border-slate-600/30',
 };
 
 export function TierBadge({ tier }: { tier: Tier }) {

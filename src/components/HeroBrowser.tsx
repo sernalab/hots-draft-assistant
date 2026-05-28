@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import type { Hero, HeroMeta, HeroRole, SortField } from '../types';
-import { HEROES } from '../data/heroes';
+import { HEROES, heroMatchesQuery } from '../data/heroes';
 import { RANK_TIERS } from '../types';
 import { HeroIcon } from './HeroIcon';
 import { TierBadge } from './TierBadge';
@@ -112,7 +112,7 @@ export function HeroBrowser({
       .filter(h => {
         if (!showTaken && h.isTaken) return false;
         if (roleFilter && h.hero.role !== roleFilter) return false;
-        if (search && !h.hero.name.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search && !heroMatchesQuery(h.hero.name, search)) return false;
         // Filter by minimum games
         if (h.meta && h.meta.gamesPlayed < minGames) return false;
         return true;
@@ -143,7 +143,7 @@ export function HeroBrowser({
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-bold uppercase tracking-wider font-[family-name:var(--font-display)] bg-gradient-to-r from-accent to-white bg-clip-text text-transparent">
+          <h2 className="text-base font-bold uppercase tracking-wider font-[family-name:var(--font-display)] text-gradient-accent">
             Heroes
           </h2>
           <p className="text-[10px] text-text-muted mt-1">
@@ -159,7 +159,7 @@ export function HeroBrowser({
           <select
             value={currentRank ?? ''}
             onChange={e => onRankChange(e.target.value === '' ? null : Number(e.target.value))}
-            className="bg-bg-primary/60 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent/50 transition-colors appearance-none cursor-pointer backdrop-blur-sm"
+            className="bg-bg-primary border border-border rounded-lg px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
           >
             {RANK_TIERS.map(r => (
               <option key={r.name} value={r.code ?? ''}>{r.name}</option>
@@ -188,7 +188,7 @@ export function HeroBrowser({
       </div>
 
       {metaError && (
-        <div className="bg-red-950/30 border border-red-500/30 rounded-lg p-2.5 text-xs text-red-400">
+        <div className="bg-ban/10 border border-ban/25 rounded-lg p-2.5 text-xs text-ban-light">
           {metaError}
         </div>
       )}
@@ -210,11 +210,11 @@ export function HeroBrowser({
               placeholder="Search hero..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-bg-primary/50 border border-white/8 rounded-lg pl-8 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-accent/40 focus:bg-bg-primary/70 transition-all"
+              className="w-full bg-bg-primary border border-border rounded-lg pl-8 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
             />
           </div>
           {/* Min games inline */}
-          <div className="flex items-center gap-1 bg-bg-primary/50 border border-white/8 rounded-lg px-2.5 py-2">
+          <div className="flex items-center gap-1 bg-bg-primary border border-border rounded-lg px-2.5 py-2">
             <label className="text-[10px] text-text-muted whitespace-nowrap">Min</label>
             <input
               type="number"
@@ -236,8 +236,8 @@ export function HeroBrowser({
                 onClick={() => setRoleFilter(roleFilter === r.value ? null : r.value)}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
                   isActive
-                    ? 'bg-accent/20 text-accent border border-accent/40 shadow-[0_0_8px_rgba(0,212,255,0.15)]'
-                    : 'bg-bg-primary/40 text-text-muted hover:text-text-secondary border border-transparent hover:border-white/8'
+                    ? 'bg-accent text-bg-primary border border-accent shadow-sm'
+                    : 'bg-white/5 text-text-muted hover:text-text-primary border border-border hover:border-accent/40'
                 }`}
               >
                 {r.label}
@@ -248,7 +248,7 @@ export function HeroBrowser({
             onClick={() => setShowTaken(!showTaken)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ml-auto border ${
               showTaken
-                ? 'bg-white/8 text-text-secondary border-white/10'
+                ? 'bg-white/10 text-text-secondary border-border'
                 : 'text-text-muted hover:text-text-secondary border-transparent'
             }`}
           >
@@ -281,8 +281,8 @@ export function HeroBrowser({
             className={`hero-row w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 ${
               isTaken
                 ? 'opacity-25 cursor-not-allowed grayscale'
-                : 'hover:bg-white/[0.04] hover:-translate-y-px hover:shadow-md cursor-pointer'
-            } ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+                : 'hover:bg-white/5 hover:-translate-y-px hover:shadow-sm cursor-pointer'
+            } ${index % 2 === 0 ? 'bg-white/[0.02]' : ''}`}
           >
             <HeroIcon hero={hero} size="sm" className="shrink-0" />
             <div className="flex-1 min-w-0">

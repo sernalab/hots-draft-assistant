@@ -62,10 +62,10 @@ export function HeroSearch({ onSelect, excludeHeroes = [], onClose }: HeroSearch
     >
       <div
         ref={modalRef}
-        className="bg-gray-900/80 backdrop-blur-xl border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl shadow-black/50"
+        className="bg-bg-card border border-border rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl shadow-black/50"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-white/8">
+        <div className="p-5 border-b border-border">
           <div className="relative">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted text-base pointer-events-none">&#x2315;</span>
             <input
@@ -74,7 +74,7 @@ export function HeroSearch({ onSelect, excludeHeroes = [], onClose }: HeroSearch
               placeholder="Search hero..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-bg-primary/60 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-base text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent/40 focus:bg-bg-primary/80 transition-all"
+              className="w-full bg-bg-primary border border-border rounded-xl pl-10 pr-10 py-3 text-base text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
               autoFocus
             />
             {query && (
@@ -91,8 +91,8 @@ export function HeroSearch({ onSelect, excludeHeroes = [], onClose }: HeroSearch
               onClick={() => setRoleFilter(undefined)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
                 !roleFilter
-                  ? 'bg-accent/20 text-accent border-accent/40 shadow-[0_0_8px_rgba(0,212,255,0.15)]'
-                  : 'bg-bg-primary/40 text-text-secondary hover:text-text-primary border-transparent hover:border-white/8'
+                  ? 'bg-accent text-bg-primary border-accent shadow-sm'
+                  : 'bg-white/5 text-text-secondary hover:text-text-primary border-border hover:border-accent/40'
               }`}
             >
               All
@@ -103,8 +103,8 @@ export function HeroSearch({ onSelect, excludeHeroes = [], onClose }: HeroSearch
                 onClick={() => setRoleFilter(role === roleFilter ? undefined : role)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
                   roleFilter === role
-                    ? 'bg-accent/20 text-accent border-accent/40 shadow-[0_0_8px_rgba(0,212,255,0.15)]'
-                    : 'bg-bg-primary/40 text-text-secondary hover:text-text-primary border-transparent hover:border-white/8'
+                    ? 'bg-accent text-bg-primary border-accent shadow-sm'
+                    : 'bg-white/5 text-text-secondary hover:text-text-primary border-border hover:border-accent/40'
                 }`}
               >
                 {role.replace('Assassin', 'Ass.')}
@@ -120,7 +120,7 @@ export function HeroSearch({ onSelect, excludeHeroes = [], onClose }: HeroSearch
               <button
                 key={hero.id}
                 onClick={() => onSelect(hero)}
-                className="hero-search-card w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/[0.06] hover:-translate-y-px hover:shadow-lg transition-all duration-150 text-left"
+                className="hero-search-card w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 hover:-translate-y-px hover:shadow-md transition-all duration-150 text-left"
               >
                 <HeroIcon hero={hero} size="sm" />
                 <div className="flex-1 min-w-0">
