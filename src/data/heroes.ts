@@ -134,20 +134,38 @@ export const HEROES_BY_NAME: Record<string, Hero> = Object.fromEntries(
   HEROES.map(h => [h.name.toLowerCase(), h])
 );
 
+/**
+ * Normalize a string for fuzzy matching: lowercase, strip diacritics and any
+ * non-alphanumeric character. So "E.T.C" → "etc", "Lúcio" → "lucio",
+ * "Li-Ming" → "liming", "Kael'thas" → "kaelthas".
+ */
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/** True if `query` matches `name` ignoring punctuation, accents and spacing. */
+export function heroMatchesQuery(name: string, query: string): boolean {
+  const q = normalize(query);
+  return !q || normalize(name).includes(q);
+}
+
 export function findHero(query: string): Hero | undefined {
-  const q = query.toLowerCase().trim();
+  const q = normalize(query);
+  if (!q) return undefined;
   return HEROES.find(h =>
-    h.name.toLowerCase() === q ||
+    normalize(h.name) === q ||
     h.id === q ||
-    h.name.toLowerCase().includes(q)
+    normalize(h.name).includes(q)
   );
 }
 
 export function searchHeroes(query: string, roleFilter?: HeroRole): Hero[] {
-  const q = query.toLowerCase().trim();
   return HEROES.filter(h => {
     const matchesRole = !roleFilter || h.role === roleFilter;
-    const matchesQuery = !q || h.name.toLowerCase().includes(q);
-    return matchesRole && matchesQuery;
+    return matchesRole && heroMatchesQuery(h.name, query);
   });
 }

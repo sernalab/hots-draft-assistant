@@ -95,3 +95,21 @@ export const MAPS: GameMap[] = [
 export const MAPS_BY_ID: Record<string, GameMap> = Object.fromEntries(
   MAPS.map(m => [m.id, m])
 );
+
+/** Number of lanes per battleground (used to group the map selector). */
+export const MAP_LANES: Record<string, 2 | 3> = {
+  'alterac-pass': 3,
+  'battlefield-of-eternity': 2,
+  'blackhearts-bay': 3,
+  'braxis-holdout': 2,
+  'cursed-hollow': 3,
+  'dragon-shire': 3,
+  'garden-of-terror': 3,
+  'hanamura-temple': 2,
+  'infernal-shrines': 3,
+  'sky-temple': 3,
+  'tomb-of-the-spider-queen': 3,
+  'volskaya-foundry': 3,
+  'towers-of-doom': 3,
+  'warhead-junction': 3,
+};

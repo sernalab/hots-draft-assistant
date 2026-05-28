@@ -74,10 +74,16 @@ function getTeamHeroes(steps: DraftStep[], team: 'ally' | 'enemy'): Hero[] {
     .map(s => s.hero!);
 }
 
+function takenNames(steps: DraftStep[]): Set<string> {
+  const taken = new Set(steps.filter(s => s.hero).map(s => s.hero!.name));
+  // Cho'Gall: either half present blocks both.
+  if (taken.has('Cho')) taken.add('Gall');
+  if (taken.has('Gall')) taken.add('Cho');
+  return taken;
+}
+
 function getAvailableHeroes(steps: DraftStep[]): Hero[] {
-  const taken = new Set(
-    steps.filter(s => s.hero).map(s => s.hero!.name)
-  );
+  const taken = takenNames(steps);
   return HEROES.filter(h => !taken.has(h.name));
 }
 
@@ -393,15 +399,18 @@ export interface CompSuggestion {
 }
 
 /**
- * Suggests a full 5-hero composition for the map,
- * excluding any already banned/picked heroes.
+ * Suggests a full 5-hero composition for the map, excluding any already
+ * banned/picked heroes. `variation` re-rolls among the top candidates per slot
+ * (0 = strongest comp, higher = alternative strong comps) so the user can ask
+ * for more suggestions.
  */
 export function suggestFullComp(
   steps: DraftStep[],
   meta: HeroMeta[],
   mapId: string | null,
+  variation = 0,
 ): CompSuggestion {
-  const taken = new Set(steps.filter(s => s.hero).map(s => s.hero!.name));
+  const taken = takenNames(steps);
   const allyPicks = steps
     .filter(s => s.team === 'ally' && s.action === 'pick' && s.hero)
     .map(s => s.hero!);
@@ -443,9 +452,14 @@ export function suggestFullComp(
     hero: h, role: h.role, reason: 'Already picked',
   }));
 
-  for (const slot of slotsToFill) {
+  // Cho'Gall occupies two of the five slots and needs two coordinated players, so
+  // it's never auto-suggested as part of a generated comp (it would imply 6 players).
+  const CHO_GALL_NAMES = new Set(['Cho', 'Gall']);
+
+  for (let si = 0; si < slotsToFill.length; si++) {
+    const slot = slotsToFill[si];
     const candidates = HEROES
-      .filter(h => slot.role.includes(h.role) && !taken.has(h.name) && !picked.has(h.name))
+      .filter(h => slot.role.includes(h.role) && !taken.has(h.name) && !picked.has(h.name) && !CHO_GALL_NAMES.has(h.name))
       .map(h => {
         const m = metaMap.get(h.name);
         let score = 0;
@@ -495,7 +509,11 @@ export function suggestFullComp(
       .sort((a, b) => b.score - a.score);
 
     if (candidates.length > 0) {
-      const best = candidates[0];
+      // Rotate within the top candidates so each re-roll surfaces a different
+      // strong option per slot (staggered by slot index for variety).
+      const pool = Math.min(candidates.length, 4);
+      const idx = (variation + si) % pool;
+      const best = candidates[idx];
       picked.add(best.hero.name);
       result.push({ hero: best.hero, role: slot.label, reason: best.reason });
     }

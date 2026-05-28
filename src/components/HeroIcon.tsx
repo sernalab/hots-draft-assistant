@@ -3,7 +3,7 @@ import type { Hero } from '../types';
 
 interface HeroIconProps {
   hero: Hero;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
 }
 
@@ -11,6 +11,16 @@ const sizeClasses = {
   sm: 'w-9 h-9',
   md: 'w-10 h-10',
   lg: 'w-14 h-14',
+  xl: 'w-16 h-16',
+  '2xl': 'w-20 h-20',
+};
+
+const sizeText = {
+  sm: 'text-xs',
+  md: 'text-xs',
+  lg: 'text-sm',
+  xl: 'text-base',
+  '2xl': 'text-lg',
 };
 
 const roleGradients: Record<string, string> = {
@@ -29,7 +39,7 @@ export function HeroIcon({ hero, size = 'md', className = '' }: HeroIconProps) {
     const gradient = roleGradients[hero.role] ?? 'from-gray-600 to-gray-800';
     return (
       <div
-        className={`${sizeClasses[size]} rounded-lg bg-gradient-to-br ${gradient} ring-1 ring-white/10 flex items-center justify-center text-white/90 text-xs font-bold shadow-sm ${className}`}
+        className={`${sizeClasses[size]} rounded-lg bg-gradient-to-br ${gradient} ring-1 ring-white/10 flex items-center justify-center text-white/90 ${sizeText[size]} font-bold shadow-sm ${className}`}
         title={hero.name}
       >
         {hero.name.slice(0, 2).toUpperCase()}

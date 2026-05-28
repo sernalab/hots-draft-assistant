@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
-import gsap from 'gsap';
+import { useMemo } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { DraftState, DraftStep } from '../types';
-import { MAPS } from '../data/maps';
+import { MAPS_BY_ID } from '../data/maps';
 import { HeroIcon } from './HeroIcon';
 
 interface DraftBoardProps {
   draft: DraftState;
   phaseLabel: string;
-  onMapChange: (mapId: string) => void;
+  onChangeMap: () => void;
   onFirstPickChange: (isFirst: boolean) => void;
   onStepClick: (index: number) => void;
   onRemoveHero: (index: number) => void;
@@ -16,429 +16,314 @@ interface DraftBoardProps {
 
 /* ── Role color map for pick slot role tags ── */
 const ROLE_COLORS: Record<string, string> = {
-  Tank: 'bg-blue-600/30 text-blue-300',
-  Bruiser: 'bg-orange-600/30 text-orange-300',
-  Healer: 'bg-green-600/30 text-green-300',
-  Support: 'bg-teal-600/30 text-teal-300',
-  'Melee Assassin': 'bg-red-600/30 text-red-300',
-  'Ranged Assassin': 'bg-purple-600/30 text-purple-300',
+  Tank: 'bg-sky-500/15 text-sky-300',
+  Bruiser: 'bg-orange-500/15 text-orange-300',
+  Healer: 'bg-emerald-500/15 text-emerald-300',
+  Support: 'bg-teal-500/15 text-teal-300',
+  'Melee Assassin': 'bg-rose-500/15 text-rose-300',
+  'Ranged Assassin': 'bg-violet-500/15 text-violet-300',
 };
+
+const SPRING = { type: 'spring' as const, stiffness: 420, damping: 30 };
+
+function BanGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+    </svg>
+  );
+}
 
 export function DraftBoard({
   draft,
   phaseLabel,
-  onMapChange,
+  onChangeMap,
   onFirstPickChange,
   onStepClick,
   onRemoveHero,
   onReset,
 }: DraftBoardProps) {
-  /* ── Refs for GSAP animations ── */
-  const slotRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-  const prevHeroes = useRef<Map<number, string | null>>(new Map());
-
+  const currentMap = draft.map ? MAPS_BY_ID[draft.map] : null;
+  const mapInitials = currentMap
+    ? currentMap.name.split(/\s+/).slice(0, 2).map(w => w[0]).join('')
+    : '?';
   /* ── Partition steps into bans / picks by team ── */
   const { allyBans, enemyBans, allyPicks, enemyPicks } = useMemo(() => {
     const ab: DraftStep[] = [];
     const eb: DraftStep[] = [];
     const ap: DraftStep[] = [];
     const ep: DraftStep[] = [];
-
     for (const step of draft.steps) {
-      if (step.action === 'ban') {
-        if (step.team === 'ally') ab.push(step);
-        else eb.push(step);
-      } else {
-        if (step.team === 'ally') ap.push(step);
-        else ep.push(step);
-      }
+      if (step.action === 'ban') (step.team === 'ally' ? ab : eb).push(step);
+      else (step.team === 'ally' ? ap : ep).push(step);
     }
     return { allyBans: ab, enemyBans: eb, allyPicks: ap, enemyPicks: ep };
   }, [draft.steps]);
 
-  /* ── GSAP animation on hero changes ── */
-  useEffect(() => {
-    for (const step of draft.steps) {
-      const prevHero = prevHeroes.current.get(step.index) ?? null;
-      const curHero = step.hero?.id ?? null;
-      const el = slotRefs.current.get(step.index);
+  const activeStep = draft.activeStepIndex !== null ? draft.steps[draft.activeStepIndex] : null;
+  const isYourTurn = activeStep?.team === 'ally';
 
-      if (!el) continue;
-
-      if (prevHero === null && curHero !== null) {
-        // Hero was assigned
-        if (step.action === 'ban') {
-          // Ban: red flash + shake
-          gsap.fromTo(
-            el,
-            { x: -6, backgroundColor: 'rgba(220, 38, 38, 0.3)' },
-            {
-              x: 0,
-              backgroundColor: 'rgba(220, 38, 38, 0)',
-              duration: 0.4,
-              ease: 'elastic.out(1, 0.4)',
-              keyframes: [
-                { x: -6, duration: 0.05 },
-                { x: 6, duration: 0.05 },
-                { x: -4, duration: 0.05 },
-                { x: 4, duration: 0.05 },
-                { x: 0, duration: 0.1 },
-              ],
-            }
-          );
-        } else {
-          // Pick: slide-in from team side + glow burst
-          const isAlly = step.team === 'ally';
-          gsap.from(el, {
-            x: isAlly ? -30 : 30,
-            scale: 0.9,
-            opacity: 0,
-            duration: 0.45,
-            ease: 'back.out(1.4)',
-          });
-          // Glow burst
-          gsap.fromTo(
-            el,
-            { boxShadow: isAlly
-              ? '0 0 0px rgba(59, 130, 246, 0)'
-              : '0 0 0px rgba(245, 158, 11, 0)'
-            },
-            {
-              boxShadow: isAlly
-                ? '0 0 20px rgba(59, 130, 246, 0.4)'
-                : '0 0 20px rgba(245, 158, 11, 0.4)',
-              duration: 0.3,
-              yoyo: true,
-              repeat: 1,
-              ease: 'power2.out',
-            }
-          );
-        }
-      } else if (prevHero !== null && curHero === null) {
-        // Hero was removed: fade out + scale down, then reset
-        gsap.fromTo(
-          el,
-          { opacity: 0.3, scale: 0.85 },
-          { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' }
-        );
-      }
+  /* ── Turn / counter label for the center spine ── */
+  const turnCounter = useMemo(() => {
+    if (!activeStep) return null;
+    if (activeStep.action === 'ban') {
+      const done = draft.steps.filter(s => s.action === 'ban' && s.hero).length;
+      return `BAN ${done + 1} / 6`;
     }
+    const done = draft.steps.filter(s => s.action === 'pick' && s.hero).length;
+    return `PICK ${done + 1} / 10`;
+  }, [activeStep, draft.steps]);
 
-    // Update prev state
-    const newMap = new Map<number, string | null>();
-    for (const step of draft.steps) {
-      newMap.set(step.index, step.hero?.id ?? null);
-    }
-    prevHeroes.current = newMap;
-  }, [draft.steps]);
-
-  /* ── Helper: set ref for a slot ── */
-  const setSlotRef = (index: number) => (el: HTMLDivElement | null) => {
-    slotRefs.current.set(index, el);
-  };
-
-  /* ── Render a BAN slot ── */
-  const renderBanSlot = (step: DraftStep) => {
+  /* ── A single PICK slot (large portrait, facing center) ── */
+  const renderPickSlot = (step: DraftStep, slotNumber: number, side: 'ally' | 'enemy') => {
     const isActive = draft.activeStepIndex === step.index;
-    const isAlly = step.team === 'ally';
+    const isAlly = side === 'ally';
     const filled = !!step.hero;
 
     return (
-      <div
-        key={step.index}
-        ref={setSlotRef(step.index)}
-        className="group relative"
-      >
+      <motion.div layout key={step.index} className="group relative">
         <button
           onClick={() => onStepClick(step.index)}
-          className={`
-            relative flex flex-col items-center justify-center
-            w-16 h-20 sm:w-20 sm:h-24 rounded-lg transition-all duration-200
+          className={`relative w-full flex items-center gap-2.5 sm:gap-3 rounded-xl px-2.5 py-2 transition-colors duration-200
+            ${isAlly ? '' : 'flex-row-reverse text-right'}
             ${isActive
-              ? 'border-2 border-accent animate-pulse-glow shadow-lg scale-105'
+              ? 'border-2 border-accent bg-accent/5 animate-pulse-glow'
               : filled
-                ? 'border border-ban/50 bg-ban/10'
-                : 'border border-dashed border-ban/40 bg-ban/5'
-            }
-          `}
+                ? (isAlly ? 'border border-ally/30 bg-ally/5 hover:bg-ally/10' : 'border border-enemy/30 bg-enemy/5 hover:bg-enemy/10')
+                : (isAlly ? 'border border-dashed border-ally/25 bg-white/[0.02] hover:border-ally/50' : 'border border-dashed border-enemy/25 bg-white/[0.02] hover:border-enemy/50')
+            }`}
         >
-          {/* Active selecting label */}
-          {isActive && !filled && (
-            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-bold text-accent bg-bg-primary px-1.5 rounded-full whitespace-nowrap tracking-wider uppercase">
-              Selecting...
-            </span>
-          )}
-
-          {filled ? (
-            <>
-              {/* Hero icon with red diagonal strike-through */}
-              <div className="relative">
-                <HeroIcon hero={step.hero!} size="sm" className="opacity-70" />
-                {/* Diagonal red line overlay */}
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox="0 0 32 32"
+          {/* Portrait / placeholder */}
+          <div className="relative shrink-0 w-16 h-16">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {filled ? (
+                <motion.div
+                  key={step.hero!.id}
+                  initial={{ opacity: 0, scale: 0.7, x: isAlly ? -28 : 28 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={SPRING}
+                  className={isAlly ? 'drop-shadow-[0_0_10px_rgba(56,189,248,0.40)]' : 'drop-shadow-[0_0_10px_rgba(251,113,133,0.40)]'}
                 >
-                  <line
-                    x1="4" y1="4" x2="28" y2="28"
-                    stroke="#ef4444"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    opacity="0.8"
-                  />
-                </svg>
-              </div>
-              <span className="text-[9px] sm:text-[10px] text-ban-light mt-0.5 truncate max-w-full px-1 line-through">
-                {step.hero!.name}
-              </span>
-            </>
-          ) : (
-            <>
-              <div className="w-8 h-8 rounded-md border border-dashed border-ban/30 flex items-center justify-center">
-                <svg className="w-4 h-4 text-ban/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                </svg>
-              </div>
-              <span className="text-[9px] sm:text-[10px] text-ban/50 mt-0.5 font-semibold uppercase">
-                Ban
-              </span>
-            </>
-          )}
+                  <HeroIcon hero={step.hero!} size="xl" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`w-16 h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xl font-bold ${
+                    isActive ? 'border-accent/40 text-accent/50' : isAlly ? 'border-ally/20 text-ally/30' : 'border-enemy/20 text-enemy/30'
+                  }`}
+                >
+                  {slotNumber}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-          {/* Team indicator dot */}
-          <span className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${
-            isAlly ? 'bg-ally/60' : 'bg-enemy/60'
-          }`} />
+          {/* Info */}
+          <div className="min-w-0 flex-1">
+            {filled ? (
+              <>
+                <span className="block text-sm font-semibold text-text-primary truncate">
+                  {step.hero!.name}
+                </span>
+                <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full mt-1 font-medium ${ROLE_COLORS[step.hero!.role] ?? 'bg-white/10 text-text-secondary'}`}>
+                  {step.hero!.role}
+                </span>
+              </>
+            ) : (
+              <span className={`text-xs font-medium ${isActive ? 'text-accent' : isAlly ? 'text-ally/50' : 'text-enemy/50'}`}>
+                {isActive ? 'Selecting…' : `${isAlly ? 'Ally' : 'Enemy'} pick`}
+              </span>
+            )}
+          </div>
         </button>
 
-        {/* Remove button */}
         {filled && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemoveHero(step.index); }}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ban text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md"
+            className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-ban text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md ${isAlly ? 'right-1.5' : 'left-1.5'}`}
           >
-            x
+            ×
           </button>
         )}
-      </div>
+      </motion.div>
     );
   };
 
-  /* ── Render a PICK slot ── */
-  const renderPickSlot = (step: DraftStep, slotNumber: number) => {
+  /* ── A single BAN slot (small, struck-through) ── */
+  const renderBanSlot = (step: DraftStep) => {
     const isActive = draft.activeStepIndex === step.index;
-    const isAlly = step.team === 'ally';
     const filled = !!step.hero;
 
-    // Use full class strings so Tailwind JIT can detect them
-    const filledClasses = isAlly
-      ? 'border border-ally/40 bg-ally/10 hover:bg-ally/15'
-      : 'border border-enemy/40 bg-enemy/10 hover:bg-enemy/15';
-    const emptyClasses = isAlly
-      ? 'border border-dashed border-ally/30 bg-ally/5 hover:border-ally/50'
-      : 'border border-dashed border-enemy/30 bg-enemy/5 hover:border-enemy/50';
-    const activeClasses = isAlly
-      ? 'border-2 border-accent animate-pulse-glow shadow-lg bg-ally/5'
-      : 'border-2 border-accent animate-pulse-glow shadow-lg bg-enemy/5';
-
     return (
-      <div
-        key={step.index}
-        ref={setSlotRef(step.index)}
-        className="group relative"
-      >
+      <motion.div layout key={step.index} className="group relative">
         <button
           onClick={() => onStepClick(step.index)}
-          className={`
-            relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200
-            ${isActive ? activeClasses : filled ? filledClasses : emptyClasses}
-          `}
+          className={`relative w-12 h-12 sm:w-[52px] sm:h-[52px] rounded-lg flex items-center justify-center transition-colors duration-200
+            ${isActive
+              ? 'border-2 border-accent animate-pulse-glow'
+              : filled
+                ? 'border border-ban/40 bg-ban/5'
+                : 'border border-dashed border-ban/30 bg-white/[0.02]'
+            }`}
         >
-          {/* Active selecting label */}
-          {isActive && !filled && (
-            <span className="absolute -top-2 left-3 text-[8px] sm:text-[9px] font-bold text-accent bg-bg-primary px-1.5 rounded-full whitespace-nowrap tracking-wider uppercase">
-              Selecting...
-            </span>
-          )}
-
-          {/* Slot number */}
-          <span className={`text-[10px] font-bold w-4 shrink-0 text-center ${
-            isActive ? 'text-accent' : isAlly ? 'text-ally/50' : 'text-enemy/50'
-          }`}>
-            {slotNumber}
-          </span>
-
-          {/* Team color bar */}
-          <span className={`w-1 h-8 rounded-full shrink-0 ${
-            filled
-              ? (isAlly ? 'bg-ally' : 'bg-enemy')
-              : (isAlly ? 'bg-ally/30' : 'bg-enemy/30')
-          }`} />
-
-          {filled ? (
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <HeroIcon hero={step.hero!} size="sm" className="shrink-0" />
-              <div className="min-w-0 flex-1">
-                <span className="text-sm font-medium text-text-primary block truncate">
-                  {step.hero!.name}
-                </span>
-                <span className={`inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-0.5 font-medium ${
-                  ROLE_COLORS[step.hero!.role] ?? 'bg-gray-600/30 text-gray-300'
-                }`}>
-                  {step.hero!.role}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <span className={`text-xs flex-1 ${
-              isActive ? 'text-accent/70' : isAlly ? 'text-ally/40' : 'text-enemy/40'
-            }`}>
-              {isAlly ? 'Ally' : 'Enemy'} pick
-            </span>
-          )}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {filled ? (
+              <motion.div
+                key={step.hero!.id}
+                initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={SPRING}
+                className="relative"
+              >
+                <HeroIcon hero={step.hero!} size="md" className="opacity-55 grayscale" />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-0.5 bg-ban rotate-45 rounded-full shadow-sm" />
+              </motion.div>
+            ) : (
+              <motion.span key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <BanGlyph className={`w-4 h-4 ${isActive ? 'text-accent/60' : 'text-ban/40'}`} />
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
 
-        {/* Remove button */}
         {filled && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemoveHero(step.index); }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-ban text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md"
+            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-ban text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow"
           >
-            x
+            ×
           </button>
         )}
+      </motion.div>
+    );
+  };
+
+  const TeamHeader = ({ side }: { side: 'ally' | 'enemy' }) => {
+    const isAlly = side === 'ally';
+    const picks = (isAlly ? allyPicks : enemyPicks).filter(s => s.hero).length;
+    return (
+      <div className={`flex items-center gap-2 ${isAlly ? '' : 'flex-row-reverse'}`}>
+        <span
+          className={`w-2.5 h-2.5 rounded-full ${isAlly ? 'bg-ally' : 'bg-enemy'}`}
+          style={{ boxShadow: isAlly ? '0 0 8px rgba(56,189,248,0.9)' : '0 0 8px rgba(251,113,133,0.9)' }}
+        />
+        <span className={`text-sm font-bold uppercase tracking-[0.14em] font-[family-name:var(--font-display)] ${isAlly ? 'text-ally' : 'text-enemy'}`}>
+          {isAlly ? 'Your Team' : 'Enemy'}
+        </span>
+        <span className="text-[11px] font-mono text-text-muted">{picks}/5</span>
       </div>
     );
   };
 
   return (
-    <div className="glass-card rounded-xl p-4 space-y-4">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-accent uppercase tracking-wider font-[family-name:var(--font-display)]">
-          Draft Board
-        </h2>
+    <div className="glass-card rounded-2xl p-4 sm:p-5 space-y-5">
+      {/* ── Control bar ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Battleground chip — opens the map selector */}
         <button
-          onClick={onReset}
-          className="text-xs text-text-muted hover:text-ban transition-colors px-2 py-1 rounded hover:bg-ban/10"
+          onClick={onChangeMap}
+          className="group flex items-center gap-2 bg-bg-primary border border-border hover:border-accent/50 rounded-lg pl-2 pr-3 py-1.5 transition-colors"
+          title="Change battleground"
         >
-          Reset
+          <span className="w-7 h-7 rounded-md bg-accent/15 text-accent-light flex items-center justify-center text-[11px] font-extrabold font-[family-name:var(--font-display)] shrink-0">
+            {mapInitials}
+          </span>
+          <span className="flex flex-col items-start leading-none">
+            <span className="text-[8px] uppercase tracking-[0.15em] text-text-muted">Battleground</span>
+            <span className="text-sm font-bold text-text-primary font-[family-name:var(--font-display)] tracking-wide">
+              {currentMap?.name ?? 'Select map'}
+            </span>
+          </span>
+          <span className="text-[11px] text-text-muted group-hover:text-accent transition-colors ml-1">⇆</span>
         </button>
-      </div>
 
-      {/* ── Map selector ── */}
-      <div>
-        <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Map</label>
-        <select
-          value={draft.map ?? ''}
-          onChange={e => onMapChange(e.target.value)}
-          className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
-        >
-          <option value="">Select map...</option>
-          {MAPS.map(m => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* ── First/Second pick segmented control ── */}
-      <div>
-        <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Your team</label>
+        {/* First / second pick segmented control */}
         <div className="relative flex bg-bg-primary rounded-lg p-0.5 border border-border">
-          {/* Sliding highlight */}
           <div
-            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md bg-ally/20 border border-ally/40 transition-transform duration-200 ease-out"
-            style={{
-              transform: draft.isFirstPick ? 'translateX(2px)' : 'translateX(calc(100% + 2px))',
-            }}
+            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md bg-ally/15 border border-ally/40 transition-transform duration-200 ease-out"
+            style={{ transform: draft.isFirstPick ? 'translateX(2px)' : 'translateX(calc(100% + 2px))' }}
           />
           <button
             onClick={() => onFirstPickChange(true)}
-            className={`relative z-10 flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200 ${
-              draft.isFirstPick ? 'text-ally' : 'text-text-muted'
-            }`}
+            className={`relative z-10 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200 ${draft.isFirstPick ? 'text-ally' : 'text-text-muted'}`}
           >
             1st Pick
           </button>
           <button
             onClick={() => onFirstPickChange(false)}
-            className={`relative z-10 flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200 ${
-              !draft.isFirstPick ? 'text-ally' : 'text-text-muted'
-            }`}
+            className={`relative z-10 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200 ${!draft.isFirstPick ? 'text-ally' : 'text-text-muted'}`}
           >
             2nd Pick
           </button>
         </div>
+
+        <div className="flex-1" />
+
+        <button
+          onClick={onReset}
+          className="text-xs text-text-muted hover:text-ban transition-colors px-3 py-1.5 rounded-lg hover:bg-ban/10 border border-border"
+        >
+          Reset
+        </button>
       </div>
 
-      {/* ── BAN SECTION ── */}
-      <div>
-        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <svg className="w-3 h-3 text-ban/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-          </svg>
-          Bans
-        </div>
-
-        <div className="flex items-center gap-2 justify-center">
-          {/* Ally bans */}
-          <div className="flex gap-1.5">
-            {allyBans.map(step => renderBanSlot(step))}
+      {/* ── Arena: ally | spine | enemy ── */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 sm:gap-4 items-stretch">
+        {/* ALLY column */}
+        <div className="space-y-3">
+          <TeamHeader side="ally" />
+          <div className="flex flex-wrap gap-1.5">
+            {allyBans.map(renderBanSlot)}
           </div>
-
-          {/* Divider */}
-          <div className="flex flex-col items-center gap-0.5 px-1">
-            <span className="text-[8px] text-ally/60 font-bold uppercase">You</span>
-            <div className="w-px h-6 bg-border" />
-            <span className="text-[8px] text-enemy/60 font-bold uppercase">Foe</span>
-          </div>
-
-          {/* Enemy bans */}
-          <div className="flex gap-1.5">
-            {enemyBans.map(step => renderBanSlot(step))}
+          <div className="space-y-2">
+            {allyPicks.map((step, i) => renderPickSlot(step, i + 1, 'ally'))}
           </div>
         </div>
-      </div>
 
-      {/* ── Phase indicator badge ── */}
-      <div className="flex justify-center">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-accent-purple-light bg-accent-purple/15 px-3 py-1 rounded-full uppercase tracking-wider border border-accent-purple/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent-purple-light animate-pulse" />
-          {phaseLabel}
-        </span>
-      </div>
+        {/* CENTER spine */}
+        <div className="flex flex-col items-center justify-center gap-3 px-0.5 sm:px-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-full text-center leading-tight whitespace-nowrap">
+            {phaseLabel}
+          </span>
 
-      {/* ── PICKS SECTION ── */}
-      <div>
-        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <svg className="w-3 h-3 text-accent/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          Picks
-        </div>
+          <div className="w-px flex-1 min-h-[20px] bg-gradient-to-b from-transparent via-border to-border" />
 
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
-          {/* ── Ally picks (left column) ── */}
-          <div className="space-y-1.5">
-            <div className="text-center text-[10px] font-bold text-ally/70 uppercase tracking-wider mb-1">
-              Ally
+          {activeStep ? (
+            <div className="flex flex-col items-center gap-1.5">
+              <motion.div
+                animate={{ x: isYourTurn ? [0, -5, 0] : [0, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 1.3, ease: 'easeInOut' }}
+                className={`text-2xl leading-none ${isYourTurn ? 'text-ally' : 'text-enemy'}`}
+              >
+                {isYourTurn ? '◀' : '▶'}
+              </motion.div>
+              <span className={`text-[11px] font-bold uppercase tracking-wide ${isYourTurn ? 'text-ally' : 'text-enemy'}`}>
+                {isYourTurn ? 'Your turn' : 'Enemy'}
+              </span>
+              <span className="text-[11px] font-mono text-text-muted whitespace-nowrap">{turnCounter}</span>
             </div>
-            {allyPicks.map((step, i) => renderPickSlot(step, i + 1))}
-          </div>
+          ) : (
+            <span className="text-xs font-bold text-positive uppercase tracking-wide text-center">✓ Draft<br />complete</span>
+          )}
 
-          {/* ── Center divider ── */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="w-px h-full bg-gradient-to-b from-transparent via-border to-transparent" />
-          </div>
+          <div className="w-px flex-1 min-h-[20px] bg-gradient-to-b from-border via-border to-transparent" />
+        </div>
 
-          {/* ── Enemy picks (right column) ── */}
-          <div className="space-y-1.5">
-            <div className="text-center text-[10px] font-bold text-enemy/70 uppercase tracking-wider mb-1">
-              Enemy
-            </div>
-            {enemyPicks.map((step, i) => renderPickSlot(step, i + 1))}
+        {/* ENEMY column */}
+        <div className="space-y-3">
+          <TeamHeader side="enemy" />
+          <div className="flex flex-wrap gap-1.5 justify-end">
+            {enemyBans.map(renderBanSlot)}
+          </div>
+          <div className="space-y-2">
+            {enemyPicks.map((step, i) => renderPickSlot(step, i + 1, 'enemy'))}
           </div>
         </div>
       </div>
