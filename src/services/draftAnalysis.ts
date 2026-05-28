@@ -446,81 +446,72 @@ export function suggestFullComp(
   const remainingSlots = Math.max(0, 5 - allyPicks.length);
   const slotsToFill = slots.slice(0, remainingSlots);
 
-  const picked = new Set<string>();
-  // Seed synergy context with existing ally picks
-  const result: { hero: Hero; role: string; reason: string }[] = allyPicks.map(h => ({
-    hero: h, role: h.role, reason: 'Already picked',
-  }));
-
   // Cho'Gall occupies two of the five slots and needs two coordinated players, so
   // it's never auto-suggested as part of a generated comp (it would imply 6 players).
   const CHO_GALL_NAMES = new Set(['Cho', 'Gall']);
 
-  for (let si = 0; si < slotsToFill.length; si++) {
-    const slot = slotsToFill[si];
-    const candidates = HEROES
-      .filter(h => slot.role.includes(h.role) && !taken.has(h.name) && !picked.has(h.name) && !CHO_GALL_NAMES.has(h.name))
-      .map(h => {
-        const m = metaMap.get(h.name);
-        let score = 0;
-        const reasons: string[] = [];
+  // Per-hero score independent of the rest of the comp: per-map WR + meta presence
+  // + map affinity + counters vs the current enemy picks.
+  const baseScore = (h: Hero): number => {
+    const m = metaMap.get(h.name);
+    let s = 0;
+    if (m && m.gamesPlayed >= 50) s += (m.winRate - 45) * 4;
+    if (m && m.gamesPlayed < 50) s -= 15;
+    if (m && m.pickRate >= 10) s += m.pickRate * 0.3;
+    if (m && m.banRate >= 10) s += m.banRate * 0.2;
+    if (mapId) s += getHeroMapAffinity(h.name, mapId).score * 0.8;
+    for (const e of enemyPicks) s += getCounter(mapId, h.name, e.name) * COUNTER_FACTOR;
+    return s;
+  };
 
-        // PRIMARY: Win rate (real data)
-        if (m && m.gamesPlayed >= 50) {
-          score += (m.winRate - 45) * 4;
-          if (m.winRate >= 52) reasons.push(`${m.winRate.toFixed(1)}% WR`);
-        }
-        if (m && m.gamesPlayed < 50) score -= 15;
+  // Beam search over the open role slots: maximise per-map WR + pairwise synergy
+  // across the WHOLE comp (not just greedy slot-by-slot). Keep the K best partial
+  // comps at each step; `variation` then picks among the K best final comps.
+  interface Beam { added: { hero: Hero; role: string }[]; names: Set<string>; score: number; }
+  const BEAM_WIDTH = 6;
+  const POOL = 10;
+  let beams: Beam[] = [{ added: [], names: new Set(allyPicks.map(h => h.name)), score: 0 }];
 
-        // Meta presence — proven picks
-        if (m && m.pickRate >= 10) score += m.pickRate * 0.3;
-        if (m && m.banRate >= 10) score += m.banRate * 0.2;
-        if (m && (m.pickRate + m.banRate) >= 20) {
-          reasons.push(`${(m.pickRate + m.banRate).toFixed(0)}% presence`);
-        }
+  for (const slot of slotsToFill) {
+    const pool = HEROES
+      .filter(h => slot.role.includes(h.role) && !taken.has(h.name) && !CHO_GALL_NAMES.has(h.name))
+      .map(h => ({ h, b: baseScore(h) }))
+      .sort((x, y) => y.b - x.b)
+      .slice(0, POOL);
 
-        // SECONDARY: Map affinity (bonus)
-        if (mapId) {
-          const aff = getHeroMapAffinity(h.name, mapId);
-          score += aff.score * 0.8;
-          if (aff.reasons.length > 0 && aff.score >= 7) reasons.push(aff.reasons[0]);
-        }
-
-        // Synergy with already picked (ally picks + previously suggested) — data-driven.
-        for (const prev of result) {
-          const delta = getSynergy(mapId, h.name, prev.hero.name);
-          if (delta !== 0) {
-            score += delta * SYNERGY_FACTOR;
-            if (delta >= REASON_THRESHOLD) reasons.push(`+${delta.toFixed(1)}% with ${prev.hero.name}`);
-          }
-        }
-
-        // Counter bonus vs enemy picks — data-driven.
-        for (const enemy of enemyPicks) {
-          const c = getCounter(mapId, h.name, enemy.name);
-          if (c > 0) {
-            score += c * COUNTER_FACTOR;
-            if (c >= REASON_THRESHOLD) reasons.push(`counters ${enemy.name}`);
-          }
-        }
-
-        return { hero: h, score, reason: reasons[0] ?? slot.label };
-      })
-      .sort((a, b) => b.score - a.score);
-
-    if (candidates.length > 0) {
-      // Rotate within the top candidates so each re-roll surfaces a different
-      // strong option per slot (staggered by slot index for variety).
-      const pool = Math.min(candidates.length, 4);
-      const idx = (variation + si) % pool;
-      const best = candidates[idx];
-      picked.add(best.hero.name);
-      result.push({ hero: best.hero, role: slot.label, reason: best.reason });
+    const nextBeams: Beam[] = [];
+    for (const beam of beams) {
+      for (const { h, b } of pool) {
+        if (beam.names.has(h.name)) continue;
+        let syn = 0;
+        for (const ally of allyPicks) syn += getSynergy(mapId, h.name, ally.name) * SYNERGY_FACTOR;
+        for (const a of beam.added) syn += getSynergy(mapId, h.name, a.hero.name) * SYNERGY_FACTOR;
+        const names = new Set(beam.names); names.add(h.name);
+        nextBeams.push({ added: [...beam.added, { hero: h, role: slot.label }], names, score: beam.score + b + syn });
+      }
     }
+    if (nextBeams.length === 0) break;
+    nextBeams.sort((a, b) => b.score - a.score);
+    beams = nextBeams.slice(0, BEAM_WIDTH);
   }
 
-  // Remove the seeded ally picks — only return suggestions
-  const suggestions = result.filter(r => r.reason !== 'Already picked');
+  // Pick the variation-th best comp (re-roll cycles alternative strong comps).
+  const best = beams.length ? beams[variation % beams.length] : { added: [] as { hero: Hero; role: string }[] };
+  const comp = [...allyPicks.map(h => ({ hero: h, role: h.role })), ...best.added];
+
+  const suggestions = best.added.map(({ hero, role }) => {
+    const m = metaMap.get(hero.name);
+    const reasons: string[] = [];
+    if (m && m.winRate >= 52) reasons.push(`${m.winRate.toFixed(1)}% WR`);
+    let partner: string | null = null, bestDelta = 0;
+    for (const other of comp) {
+      if (other.hero.name === hero.name) continue;
+      const d = getSynergy(mapId, hero.name, other.hero.name);
+      if (d > bestDelta) { bestDelta = d; partner = other.hero.name; }
+    }
+    if (partner && bestDelta >= REASON_THRESHOLD) reasons.push(`+${bestDelta.toFixed(1)}% w/ ${partner}`);
+    return { hero, role, reason: reasons[0] ?? role };
+  });
 
   // Build strategy description from map strengths
   let strategy = 'Balanced composition';

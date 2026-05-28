@@ -98,4 +98,16 @@ export function getCounter(mapId: string | null, winner: string, loser: string):
   return cntIndex(mapKey(mapId)).get(cntKey(winner, loser)) ?? 0;
 }
 
+export interface SynergyDuo { a: string; b: string; delta: number; }
+
+/** Top synergy duos (highest WR swing together) for a map, strongest first. */
+export function getTopSynergies(mapId: string | null, n = 6): SynergyDuo[] {
+  const pairs = data.synergy[mapKey(mapId)] ?? [];
+  return pairs
+    .map(([a, b, d]) => ({ a: idToName.get(a), b: idToName.get(b), delta: d }))
+    .filter((p): p is SynergyDuo => !!p.a && !!p.b)
+    .sort((x, y) => y.delta - x.delta)
+    .slice(0, n);
+}
+
 export const matchupMeta = { generatedAt: data.generatedAt, prune: data.prune };
